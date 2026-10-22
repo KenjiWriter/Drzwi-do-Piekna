@@ -21,10 +21,33 @@ Wdrożenie techniczne jest gotowe, ale **strony nie wolno jeszcze publikować ja
 - [ ] **Zdjęcia są demonstracyjne** (Pexels, rozpoznawalne osoby, przed/po to jeden kadr z filtrem). Trzeba je zastąpić
       własnymi, a pary przed/po dodać tylko ze zgodami pacjentek.
 - [ ] **Opinia „Anna" jest przykładowa** (oznaczona jako demo). Na produkcji seeder jej nie zakłada.
-- [ ] **Kod nie jest w repozytorium git.** Skrypty zakładają, że kod trafia na serwer przez `git pull` albo `rsync`.
-      Workflow CI (`.github/workflows/tests.yml`) czeka na repozytorium GitHub.
-- [ ] **PostgreSQL nigdy nie był uruchomiony z tą aplikacją.** DDL sprawdzono generowaniem, a pierwszy prawdziwy test
-      to CI (job `postgres`) i pierwsze wdrożenie na stagingu.
+- [x] ~~Kod nie jest w repozytorium git~~ **Jest:** https://github.com/KenjiWriter/Drzwi-do-Piekna (gałąź `main`). Na serwer trafia przez `git clone` i `git pull`.
+      Workflow CI (`.github/workflows/tests.yml`) uruchamia się na GitHubie: sprawdź, czy przechodzi (zwłaszcza job `postgres`).
+- [ ] **PostgreSQL nigdy nie był uruchomiony z tą aplikacją na prawdziwym serwerze.** DDL sprawdzono generowaniem, a pierwszy prawdziwy test
+      to CI (job `postgres`) i pierwsze wdrożenie na stagingu (poniżej).
+
+## Staging: demo.cerasusdigital.pl
+
+Pokazowa kopia strony na osobnej domenie, na czystym Ubuntu 22.04 lub 24.04 (jeden serwer, ta jedna aplikacja). To `APP_ENV=staging`:
+`robots.txt` blokuje indeksowanie, dokumenty prawne nie blokują wdrożenia, a poczta zapisuje wiadomości do logu, dopóki w `.env` nie ma SMTP.
+Wszystko robi `deploy/provision-staging.sh` (pakiety, PHP 8.4, PostgreSQL, Node 22, nginx, certyfikat Let's Encrypt, pierwsze wdrożenie,
+dane startowe, SSR pod Supervisorem). Przed uruchomieniem rekord A `demo.cerasusdigital.pl` musi wskazywać na ten serwer.
+
+```bash
+sudo apt update && sudo apt install -y git
+sudo git clone https://github.com/KenjiWriter/Drzwi-do-Piekna.git /var/www/drzwidopiekna
+sudo LE_EMAIL=twoj@adres.pl bash /var/www/drzwidopiekna/deploy/provision-staging.sh
+cd /var/www/drzwidopiekna && sudo php artisan make:filament-user      # konto do /admin, hasło wpisujesz sam
+```
+
+Skrypt można uruchomić ponownie (nie nadpisuje `.env`, hasła bazy, konfiguracji nginx ani danych). Kolejne wdrożenia:
+
+```bash
+cd /var/www/drzwidopiekna && sudo git pull --ff-only && sudo EXPECT_ENV=staging SUDO="" bash deploy/deploy.sh
+```
+
+Na stagingu panel domyślnie wymaga 2FA (`ADMIN_2FA=false` przy uruchomieniu skryptu albo `ADMIN_2FA_REQUIRED=false` w `.env` to wyłącza).
+Gdy gabinet ma oglądać demo bez widocznego adresu dla wszystkich, można dodatkowo zabezpieczyć całą domenę hasłem nginx (`auth_basic`).
 - [x] ~~Brak dwuskładnikowego logowania do `/admin`~~ **Jest** (aplikacja uwierzytelniająca + kody awaryjne, w produkcji wymagane, patrz punkt 11).
 - [ ] **Poczta z potwierdzeniem dla klientek.** Formularz wysyła teraz automatyczne potwierdzenie na adres podany przez osobę (oprócz
       powiadomienia dla gabinetu), więc SMTP, SPF i DKIM domeny muszą działać, zanim ruszy produkcja (inaczej wiadomości trafią do spamu).
@@ -112,20 +135,24 @@ bash deploy/deploy.sh
 
 ## 4. nginx i HTTPS
 
+Konfiguracja ma od razu docelowy układ: **domena główna bez www** (jak w adresach starej strony), `http` i `www`
+przekierowują na nią jednym skokiem. Wymaga nginx w wersji z HTTP/2 w dyrektywie `listen` (każda z Ubuntu 22.04 i 24.04).
+Gotowy plik odwołuje się do certyfikatu, którego jeszcze nie ma, więc **najpierw certyfikat, dopiero potem konfiguracja**
+(certbot w trybie `standalone` potrzebuje wolnego portu 80, a DNS musi już wskazywać na serwer):
+
 ```bash
+sudo systemctl stop nginx
+sudo certbot certonly --standalone -d drzwidopiekna.pl -d www.drzwidopiekna.pl
 sudo cp deploy/nginx/security-headers.conf /etc/nginx/snippets/ddp-security-headers.conf
 sudo cp deploy/nginx/drzwidopiekna.conf /etc/nginx/sites-available/drzwidopiekna.conf
 sudo ln -s /etc/nginx/sites-available/drzwidopiekna.conf /etc/nginx/sites-enabled/
 sudo nginx -t        # popraw ścieżki (root, gniazdo PHP-FPM), jeśli zgłasza błąd
+sudo systemctl start nginx
 ```
 
-Certyfikat wystawia certbot, a konfiguracja ma od razu docelowy układ: **domena główna bez www** (jak w adresach starej
-strony), `http` i `www` przekierowują na nią jednym skokiem.
-
-```bash
-sudo certbot --nginx -d drzwidopiekna.pl -d www.drzwidopiekna.pl
-sudo systemctl reload nginx
-```
+Odnowienia certyfikatu robi `certbot.timer`, ale tryb `standalone` przy odnawianiu też potrzebuje portu 80. Po wystawieniu certyfikatu
+przestaw odnawianie na nginx: w `/etc/letsencrypt/renewal/drzwidopiekna.pl.conf` ustaw `authenticator = nginx` i `installer = nginx`
+(sprawdzenie: `sudo certbot renew --dry-run`).
 
 Certbot odnawia certyfikat sam (`systemctl list-timers | grep certbot`). Przy przełączeniu domeny patrz punkt 9.
 

@@ -32,7 +32,7 @@ const crumbs = computed(() => [
             <Picture :name="post.photo" sizes="(min-width: 1024px) 720px, 100vw" eager />
         </figure>
 
-        <!-- HTML pochodzi z Markdown po stronie serwera (App\Support\Markdown): surowy HTML i niebezpieczne linki są usunięte. -->
+        <!-- HTML pochodzi z edytora wizualnego i jest oczyszczany po stronie serwera (App\Support\PostContent). -->
         <div class="ddp-prose" v-html="post.html"></div>
 
         <footer class="ddp-post__author">

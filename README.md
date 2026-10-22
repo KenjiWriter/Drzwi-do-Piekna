@@ -96,7 +96,8 @@ Panel Filament jest pod `/admin` (zabiegi, obszary, cennik, zespół, opinie, bl
 ## Wdrożenie
 
 Przygotowanie na serwer VPS (nginx, PHP-FPM, PostgreSQL, SSR pod Supervisorem), skrypty i lista rzeczy, które jeszcze blokują start:
-[docs/DEPLOY.md](docs/DEPLOY.md). Pliki w `deploy/`, szablon środowiska w `.env.production.example`. Po wdrożeniu:
+[docs/DEPLOY.md](docs/DEPLOY.md). Staging na `demo.cerasusdigital.pl` stawia jedno polecenie na czystym Ubuntu: `deploy/provision-staging.sh`
+(opis w sekcji „Staging” w DEPLOY.md). Pliki w `deploy/`, szablon środowiska w `.env.production.example`. Po wdrożeniu:
 `bash deploy/check-redirects.sh https://domena` (stare adresy WordPressa) i `bash deploy/check-ssr.sh https://domena`.
 
 Build produkcyjny:

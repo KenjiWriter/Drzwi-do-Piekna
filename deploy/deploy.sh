@@ -76,6 +76,12 @@ say "Dowiązanie zdjęć z panelu (public/storage)"
 say "Cache konfiguracji, tras, widoków i zdarzeń"
 php artisan optimize
 
+# Uruchomione jako root (np. provision-staging.sh) tworzy pliki w storage i bootstrap/cache jako root,
+# a PHP-FPM pracuje jako www-data i musi tam pisać (sesje, logi, skompilowane widoki, zdjęcia z panelu).
+if [ "$(id -u)" = "0" ]; then
+    chown -R www-data:www-data storage bootstrap/cache
+fi
+
 if [ -n "$PHP_FPM_SERVICE" ]; then
     say "Przeładowanie PHP-FPM (czyszczenie OPcache)"
     $SUDO systemctl reload "$PHP_FPM_SERVICE"

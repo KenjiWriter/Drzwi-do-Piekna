@@ -345,7 +345,7 @@
 .ddp-article__photo { margin: 0; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface); }
 .ddp-article__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-/* Blog: lista wpisów, strona wpisu i treść z Markdown */
+/* Blog: lista wpisów, strona wpisu i treść z edytora */
 .ddp-posts { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 .ddp-postcard { position: relative; display: flex; flex-direction: column; height: 100%; border: 1px solid var(--hairline); background: var(--surface); }
 .ddp-postcard:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 3px; }
