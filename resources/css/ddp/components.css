@@ -155,12 +155,16 @@
  */
 .ddp-intro { position: fixed; inset: 0; z-index: var(--z-intro); display: grid; place-items: center; height: 100svh; overflow: hidden; }
 .ddp-intro--inline { position: relative; inset: auto; height: 100%; min-height: 360px; }
-.ddp-intro__leaf { position: absolute; top: 0; bottom: 0; overflow: hidden; box-sizing: border-box; width: calc(50% + 1px); background: var(--surface); border: 0 solid transparent; }
+.ddp-intro__leaf { position: absolute; top: 0; bottom: 0; overflow: hidden; box-sizing: border-box; width: calc(50% + 1px); background: var(--surface); }
 /* Skrzydła to zwykłe prostokąty z miękkim, ciepłym światłem: jasny środek i ciemniejsze brzegi, jak okno na zdjęciowych klatkach storyboardu. Połówki gradientu schodzą się w osi. */
-.ddp-intro { --intro-light: #fffaf4; --intro-mid: #f0e4d8; --intro-edge: #d8c6b7; }
-.ddp-intro__leaf--left { left: 0; transform-origin: 0 50%; border-right-width: 1px; background: radial-gradient(ellipse 110vw 92vh at 100% 44%, var(--intro-light) 0%, var(--intro-mid) 40%, var(--intro-edge) 100%) no-repeat border-box; }
-.ddp-intro__leaf--right { right: 0; transform-origin: 100% 50%; border-left-width: 1px; background: radial-gradient(ellipse 110vw 92vh at 0% 44%, var(--intro-light) 0%, var(--intro-mid) 40%, var(--intro-edge) 100%) no-repeat border-box; }
-.ddp-intro--done .ddp-intro__leaf { animation: ddp-leaf-open 1.4s cubic-bezier(.65, 0, .25, 1) .15s forwards; border-color: var(--taupe); transition: border-color .4s ease; }
+.ddp-intro { --intro-light: #fbf4ea; --intro-mid: #e6d6c6; --intro-edge: #c6b09d; }
+.ddp-intro__leaf--left { left: 0; transform-origin: 0 50%; background: radial-gradient(ellipse 110vw 92vh at 100% 44%, var(--intro-light) 0%, var(--intro-mid) 40%, var(--intro-edge) 100%) no-repeat; }
+.ddp-intro__leaf--right { right: 0; transform-origin: 100% 50%; background: radial-gradient(ellipse 110vw 92vh at 0% 44%, var(--intro-light) 0%, var(--intro-mid) 40%, var(--intro-edge) 100%) no-repeat; }
+.ddp-intro__leaf::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: transparent; transition: background-color .4s ease; }
+.ddp-intro__leaf--left::after { right: 0; }
+.ddp-intro__leaf--right::after { left: 0; }
+.ddp-intro--done .ddp-intro__leaf { animation: ddp-leaf-open 1.4s cubic-bezier(.65, 0, .25, 1) .15s forwards; }
+.ddp-intro--done .ddp-intro__leaf::after { background: var(--taupe); }
 .ddp-intro--done .ddp-intro__stack { opacity: 0; transition: opacity .45s ease; }
 @keyframes ddp-leaf-open { to { transform: scaleX(0); } }
 .ddp-intro__stack { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-6); padding: 0 var(--gutter); text-align: center; }
@@ -172,27 +176,27 @@
 .ddp-intro__light { position: absolute; top: 0; bottom: 0; width: calc(200% - 2px); pointer-events: none; }
 .ddp-intro__leaf--left .ddp-intro__light { left: 0; }
 .ddp-intro__leaf--right .ddp-intro__light { right: 0; }
-.ddp-intro__light::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 115% at 0% 0%, rgba(255, 251, 245, .8), rgba(255, 251, 245, 0) 68%), radial-gradient(ellipse 75% 95% at 100% 100%, rgba(112, 88, 72, .17), rgba(112, 88, 72, 0) 72%); }
-.ddp-intro__shaft { --tilt: -38deg; --travel: 46vmax; position: absolute; left: 50%; top: 50%; width: 190vmax; height: 38vmax; margin: -19vmax 0 0 -95vmax; background: linear-gradient(180deg, rgba(255, 250, 242, 0), rgba(255, 250, 242, .55) 50%, rgba(255, 250, 242, 0)); opacity: 0; transform: rotate(var(--tilt)) translateX(calc(-1 * var(--travel))); animation: ddp-shaft 3.4s ease-in-out both; }
-.ddp-intro__shaft--thin { --tilt: -43deg; --travel: 34vmax; height: 9vmax; margin-top: -4.5vmax; background: linear-gradient(180deg, rgba(255, 250, 242, 0), rgba(255, 250, 242, .6) 50%, rgba(255, 250, 242, 0)); animation-duration: 3s; animation-delay: .45s; }
+.ddp-intro__light::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 85% 120% at 0% 0%, rgba(255, 252, 247, .92), rgba(255, 252, 247, 0) 70%), radial-gradient(ellipse 75% 95% at 100% 100%, rgba(100, 78, 64, .24), rgba(100, 78, 64, 0) 74%); }
+.ddp-intro__shaft { --tilt: -38deg; --travel: 46vmax; position: absolute; left: 50%; top: 50%; width: 190vmax; height: 44vmax; margin: -22vmax 0 0 -95vmax; background: linear-gradient(180deg, rgba(255, 251, 245, 0), rgba(255, 251, 245, .8) 50%, rgba(255, 251, 245, 0)); opacity: 0; transform: rotate(var(--tilt)) translateX(calc(-1 * var(--travel))); animation: ddp-shaft 3.4s ease-in-out both; }
+.ddp-intro__shaft--thin { --tilt: -43deg; --travel: 34vmax; height: 10vmax; margin-top: -5vmax; background: linear-gradient(180deg, rgba(255, 251, 245, 0), rgba(255, 251, 245, .85) 46%, rgba(255, 255, 255, .95) 50%, rgba(255, 251, 245, .85) 54%, rgba(255, 251, 245, 0)); animation-duration: 3s; animation-delay: .35s; }
 .ddp-intro__foliage { position: absolute; width: 56vmax; height: auto; overflow: visible; fill: #5a463a; stroke: #5a463a; stroke-width: 1.2; stroke-linecap: round; opacity: .15; filter: blur(4px); animation: ddp-sway 7s ease-in-out infinite alternate; }
 .ddp-intro__stem { fill: none; stroke-width: 2; }
 .ddp-intro__foliage--top { right: -14vmax; top: -16vmax; transform: rotate(150deg); }
 .ddp-intro__foliage--bottom { right: 2vmax; bottom: -22vmax; width: 48vmax; opacity: .11; transform: rotate(-20deg); animation-delay: -3s; }
-@keyframes ddp-shaft { 0% { opacity: 0; transform: rotate(var(--tilt)) translateX(calc(-1 * var(--travel))); } 30% { opacity: 1; } 70% { opacity: .7; } 100% { opacity: 0; transform: rotate(var(--tilt)) translateX(var(--travel)); } }
+@keyframes ddp-shaft { 0% { opacity: 0; transform: rotate(var(--tilt)) translateX(calc(-1 * var(--travel))); } 22% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--tilt)) translateX(var(--travel)); } }
 @keyframes ddp-sway { from { translate: 0 0; } to { translate: -1.6vmax 1.1vmax; } }
 /* Błyski, subtelne jak na zdjęciowych klatkach storyboardu: miękka poświata za znakiem, jedna cienka smuga światła przez znak
    (jak promień przez okno) i delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek i ozdobników. */
 /* Poświata jest pozycjonowana, więc znak (svg) też musi być pozycjonowany i leżeć po niej w DOM, inaczej poświata zasłoni linie. */
 .ddp-intro__mark { position: relative; display: grid; place-items: center; }
 .ddp-intro__bloom { position: absolute; left: 50%; top: 50%; width: max(560px, 110vmin); aspect-ratio: 1; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(255, 251, 246, .95), rgba(255, 244, 232, .45) 45%, rgba(255, 244, 232, 0)); opacity: 0; pointer-events: none; animation: ddp-bloom 2.8s ease-out both; }
-.ddp-intro__ray { position: absolute; left: 50%; top: 50%; width: 230vmax; height: 1.5px; margin-top: -.75px; background: linear-gradient(90deg, rgba(255, 252, 246, 0), rgba(255, 252, 246, 0) 10%, rgba(255, 252, 246, .85) 50%, rgba(255, 252, 246, 0) 90%, rgba(255, 252, 246, 0)); opacity: 0; transform: translate(-50%, -50%) rotate(-49deg); pointer-events: none; animation: ddp-ray 1.7s ease-in-out .4s both; }
+.ddp-intro__ray { position: absolute; left: 50%; top: 50%; width: 230vmax; height: 2px; margin-top: -1px; background: linear-gradient(90deg, rgba(255, 252, 246, 0), rgba(255, 252, 246, 0) 8%, rgba(255, 255, 255, 1) 50%, rgba(255, 252, 246, 0) 92%, rgba(255, 252, 246, 0)); opacity: 0; transform: translate(-50%, -50%) rotate(-49deg); pointer-events: none; animation: ddp-ray 1.7s ease-in-out .4s both; }
 .ddp-intro__ray::before { content: ""; position: absolute; inset: -7px 0; background: inherit; filter: blur(8px); opacity: .75; }
 /* Jasny punkt biegnie końcem linii: krótka kreska z zaokrąglonymi końcami po tej samej ścieżce, w tym samym czasie i z tym samym przyspieszeniem co linia. */
 .ddp-intro__glints { fill: none; stroke: #fffdf8; stroke-width: 1.5; stroke-linecap: round; filter: drop-shadow(0 0 1.2px rgba(255, 238, 216, .8)); }
 .ddp-intro__glints path { stroke-dasharray: var(--dash, .05) 1.2; opacity: 0; animation: ddp-glint var(--dur, .45s) cubic-bezier(.6, 0, .3, 1) var(--delay, 0s) both; }
 @keyframes ddp-bloom { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: .7; } }
-@keyframes ddp-ray { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-49deg) translateX(-9%); } 30% { opacity: 1; } 65% { opacity: .7; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(-49deg) translateX(9%); } }
+@keyframes ddp-ray { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-49deg) translateX(-9%); } 25% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(-49deg) translateX(9%); } }
 @keyframes ddp-glint { 0% { stroke-dashoffset: var(--dash, .05); opacity: 0; } 10% { opacity: .8; } 85% { opacity: .8; } 100% { stroke-dashoffset: -1; opacity: 0; } }
 .ddp-intro__name { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.25rem, 1.5rem + 3.4vw, 4rem); line-height: 1; color: var(--ink); animation: ddp-rise .55s ease 1.65s both; }
 .ddp-intro__sub { padding-left: .46em; font: 400 .6875rem/1 var(--font-sans); letter-spacing: .46em; text-transform: uppercase; color: var(--muted); animation: ddp-rise .35s ease 2.2s both; }
