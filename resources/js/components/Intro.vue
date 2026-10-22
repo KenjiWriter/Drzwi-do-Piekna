@@ -13,8 +13,8 @@ import { SIGNET_VIEW_BOX, door, far, frame, near, outline } from '../signet';
  * odsłaniają stronę (CSS: .ddp-intro--done). Kliknięcie lub klawisz pomija czekanie i otwiera drzwi od razu.
  *
  * Światło jest subtelne i miękkie, jak na zdjęciowych klatkach storyboardu: ciepłe światło okna i cień rośliny na całej planszy
- * (na skrzydłach drzwi), poświata za znakiem, jedna miękka smuga światła, która przesuwa się w poprzek planszy razem z rysowaniem
- * znaku i przechodzi przez jego środek, oraz delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek, twardych linii i
+ * (na skrzydłach drzwi), poświata za znakiem, jedna szeroka, rozmyta „bryza” światła w kształcie półokręgu, która płynie od lewej
+ * do prawej razem z rysowaniem znaku i przechodzi przez jego środek, oraz delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek, twardych linii i
  * efektów „z kreskówki”. Tylko opacity, przesuw i przesuw kreski, bez animowanego obrotu i bez 3D
  * (CSS: .ddp-intro__light, __foliage, __bloom, __beam, __glints). Geometria znaku: resources/js/signet.js.
  */
@@ -187,7 +187,7 @@ onBeforeUnmount(() => {
                         <path v-for="stroke in strokes" :key="stroke[0]" pathLength="1" :d="stroke[0]" :style="timing(stroke)" />
                     </g>
                 </svg>
-                <!-- Jedna miękka smuga światła przesuwa się w poprzek planszy razem z rysowaniem znaku i przechodzi przez jego środek. -->
+                <!-- Jedna szeroka, rozmyta bryza światła (półokrąg) płynie od lewej do prawej razem z rysowaniem znaku i przechodzi przez jego środek. -->
                 <div class="ddp-intro__beam"></div>
             </div>
             <div class="ddp-intro__name">Drzwi do Piękna</div>
