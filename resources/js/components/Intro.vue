@@ -12,11 +12,11 @@ import { SIGNET_VIEW_BOX, door, far, frame, near, outline } from '../signet';
  * domknięcie obrysem 1,2 do 1,65 (potem krótka pauza), nazwa 1,65, napis 2,2, od 3 s otwarcie dwóch skrzydeł drzwi, które
  * odsłaniają stronę (CSS: .ddp-intro--done). Kliknięcie lub klawisz pomija czekanie i otwiera drzwi od razu.
  *
- * Światło jest subtelne i miękkie, jak na zdjęciowych klatkach storyboardu: ciepłe światło okna i szerokie smugi na całej planszy
- * (na skrzydłach drzwi), cień rośliny w rogach, poświata za znakiem, miękkie promienie rozchodzące się ze znaku (dwa zestawy
- * o różnych kątach, jeden po drugim) i delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek, twardych linii i efektów
- * „z kreskówki”. Tylko opacity, przesuw i przesuw kreski, bez animowanego obrotu i bez 3D
- * (CSS: .ddp-intro__light, __shaft, __foliage, __bloom, __rays, __glints). Geometria znaku: resources/js/signet.js.
+ * Światło jest subtelne i miękkie, jak na zdjęciowych klatkach storyboardu: ciepłe światło okna i cień rośliny na całej planszy
+ * (na skrzydłach drzwi), poświata za znakiem, jedna miękka smuga światła, która przesuwa się w poprzek planszy razem z rysowaniem
+ * znaku i przechodzi przez jego środek, oraz delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek, twardych linii i
+ * efektów „z kreskówki”. Tylko opacity, przesuw i przesuw kreski, bez animowanego obrotu i bez 3D
+ * (CSS: .ddp-intro__light, __foliage, __bloom, __beam, __glints). Geometria znaku: resources/js/signet.js.
  */
 const done = ref(false);
 let timer = null;
@@ -159,7 +159,6 @@ onBeforeUnmount(() => {
     <div class="ddp-intro" :class="{ 'ddp-intro--done': done }" aria-hidden="true" @click="skip">
         <div v-for="side in sides" :key="side" class="ddp-intro__leaf" :class="`ddp-intro__leaf--${side}`">
             <div class="ddp-intro__light">
-                <div class="ddp-intro__shaft"></div>
                 <!-- Cień rośliny widać tylko na prawym skrzydle (jak na zdjęciowych klatkach storyboardu), więc kształt leży tylko tam. -->
                 <template v-if="side === 'right'">
                     <svg class="ddp-intro__foliage ddp-intro__foliage--top" viewBox="-150 -150 300 165" focusable="false">
@@ -188,9 +187,8 @@ onBeforeUnmount(() => {
                         <path v-for="stroke in strokes" :key="stroke[0]" pathLength="1" :d="stroke[0]" :style="timing(stroke)" />
                     </g>
                 </svg>
-                <!-- Miękkie promienie rozchodzące się ze znaku: dwa zestawy o różnych kątach pojawiają się jeden po drugim. -->
-                <div class="ddp-intro__rays"></div>
-                <div class="ddp-intro__rays ddp-intro__rays--b"></div>
+                <!-- Jedna miękka smuga światła przesuwa się w poprzek planszy razem z rysowaniem znaku i przechodzi przez jego środek. -->
+                <div class="ddp-intro__beam"></div>
             </div>
             <div class="ddp-intro__name">Drzwi do Piękna</div>
             <div class="ddp-intro__sub">Medycyna estetyczna</div>
