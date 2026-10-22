@@ -155,7 +155,7 @@
  */
 .ddp-intro { position: fixed; inset: 0; z-index: var(--z-intro); display: grid; place-items: center; height: 100svh; overflow: hidden; }
 .ddp-intro--inline { position: relative; inset: auto; height: 100%; min-height: 360px; }
-.ddp-intro__leaf { position: absolute; top: 0; bottom: 0; box-sizing: border-box; width: calc(50% + 1px); background: var(--surface); border: 0 solid transparent; }
+.ddp-intro__leaf { position: absolute; top: 0; bottom: 0; overflow: hidden; box-sizing: border-box; width: calc(50% + 1px); background: var(--surface); border: 0 solid transparent; }
 /* Skrzydła to zwykłe prostokąty z miękkim, ciepłym światłem: jasny środek i ciemniejsze brzegi, jak okno na zdjęciowych klatkach storyboardu. Połówki gradientu schodzą się w osi. */
 .ddp-intro { --intro-light: #fffaf4; --intro-mid: #f0e4d8; --intro-edge: #d8c6b7; }
 .ddp-intro__leaf--left { left: 0; transform-origin: 0 50%; border-right-width: 1px; background: radial-gradient(ellipse 110vw 92vh at 100% 44%, var(--intro-light) 0%, var(--intro-mid) 40%, var(--intro-edge) 100%) no-repeat border-box; }
@@ -166,12 +166,27 @@
 .ddp-intro__stack { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-6); padding: 0 var(--gutter); text-align: center; }
 .ddp-intro__signet { position: relative; display: block; width: clamp(96px, 22vw, 150px); height: auto; overflow: visible; fill: none; stroke: var(--brand); stroke-width: 1.4; stroke-linejoin: round; }
 .ddp-intro__signet > path { stroke-dasharray: 1 1; animation: ddp-draw var(--dur, .45s) cubic-bezier(.6, 0, .3, 1) var(--delay, 0s) both; }
+/* Światło na całej planszy, jak okno na zdjęciowych klatkach storyboardu: ciepłe światło z lewego górnego rogu, ciemniejszy prawy dolny
+   róg, szerokie smugi światła przechodzące przez całą planszę i miękkie cienie liści. Leży na skrzydłach drzwi: każde skrzydło pokazuje
+   swoją połowę tej samej sceny (warstwa ma szerokość całej nakładki), więc światło rozchyla się razem z drzwiami. */
+.ddp-intro__light { position: absolute; top: 0; bottom: 0; width: calc(200% - 2px); pointer-events: none; }
+.ddp-intro__leaf--left .ddp-intro__light { left: 0; }
+.ddp-intro__leaf--right .ddp-intro__light { right: 0; }
+.ddp-intro__light::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 115% at 0% 0%, rgba(255, 251, 245, .8), rgba(255, 251, 245, 0) 68%), radial-gradient(ellipse 75% 95% at 100% 100%, rgba(112, 88, 72, .17), rgba(112, 88, 72, 0) 72%); }
+.ddp-intro__shaft { --tilt: -38deg; --travel: 46vmax; position: absolute; left: 50%; top: 50%; width: 190vmax; height: 38vmax; margin: -19vmax 0 0 -95vmax; background: linear-gradient(180deg, rgba(255, 250, 242, 0), rgba(255, 250, 242, .55) 50%, rgba(255, 250, 242, 0)); opacity: 0; transform: rotate(var(--tilt)) translateX(calc(-1 * var(--travel))); animation: ddp-shaft 3.4s ease-in-out both; }
+.ddp-intro__shaft--thin { --tilt: -43deg; --travel: 34vmax; height: 9vmax; margin-top: -4.5vmax; background: linear-gradient(180deg, rgba(255, 250, 242, 0), rgba(255, 250, 242, .6) 50%, rgba(255, 250, 242, 0)); animation-duration: 3s; animation-delay: .45s; }
+.ddp-intro__foliage { position: absolute; width: 56vmax; height: auto; overflow: visible; fill: #5a463a; stroke: #5a463a; stroke-width: 1.2; stroke-linecap: round; opacity: .15; filter: blur(4px); animation: ddp-sway 7s ease-in-out infinite alternate; }
+.ddp-intro__stem { fill: none; stroke-width: 2; }
+.ddp-intro__foliage--top { right: -14vmax; top: -16vmax; transform: rotate(150deg); }
+.ddp-intro__foliage--bottom { right: 2vmax; bottom: -22vmax; width: 48vmax; opacity: .11; transform: rotate(-20deg); animation-delay: -3s; }
+@keyframes ddp-shaft { 0% { opacity: 0; transform: rotate(var(--tilt)) translateX(calc(-1 * var(--travel))); } 30% { opacity: 1; } 70% { opacity: .7; } 100% { opacity: 0; transform: rotate(var(--tilt)) translateX(var(--travel)); } }
+@keyframes ddp-sway { from { translate: 0 0; } to { translate: -1.6vmax 1.1vmax; } }
 /* Błyski, subtelne jak na zdjęciowych klatkach storyboardu: miękka poświata za znakiem, jedna cienka smuga światła przez znak
    (jak promień przez okno) i delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek i ozdobników. */
 /* Poświata jest pozycjonowana, więc znak (svg) też musi być pozycjonowany i leżeć po niej w DOM, inaczej poświata zasłoni linie. */
 .ddp-intro__mark { position: relative; display: grid; place-items: center; }
 .ddp-intro__bloom { position: absolute; left: 50%; top: 50%; width: max(560px, 110vmin); aspect-ratio: 1; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(255, 251, 246, .95), rgba(255, 244, 232, .45) 45%, rgba(255, 244, 232, 0)); opacity: 0; pointer-events: none; animation: ddp-bloom 2.8s ease-out both; }
-.ddp-intro__ray { position: absolute; left: 50%; top: 50%; width: max(300px, 52vmin); height: 1.5px; margin-top: -.75px; background: linear-gradient(90deg, rgba(255, 252, 246, 0), rgba(255, 252, 246, .85) 50%, rgba(255, 252, 246, 0)); opacity: 0; transform: translate(-50%, -50%) rotate(-49deg); pointer-events: none; animation: ddp-ray 1.7s ease-in-out .4s both; }
+.ddp-intro__ray { position: absolute; left: 50%; top: 50%; width: 230vmax; height: 1.5px; margin-top: -.75px; background: linear-gradient(90deg, rgba(255, 252, 246, 0), rgba(255, 252, 246, 0) 10%, rgba(255, 252, 246, .85) 50%, rgba(255, 252, 246, 0) 90%, rgba(255, 252, 246, 0)); opacity: 0; transform: translate(-50%, -50%) rotate(-49deg); pointer-events: none; animation: ddp-ray 1.7s ease-in-out .4s both; }
 .ddp-intro__ray::before { content: ""; position: absolute; inset: -7px 0; background: inherit; filter: blur(8px); opacity: .75; }
 /* Jasny punkt biegnie końcem linii: krótka kreska z zaokrąglonymi końcami po tej samej ścieżce, w tym samym czasie i z tym samym przyspieszeniem co linia. */
 .ddp-intro__glints { fill: none; stroke: #fffdf8; stroke-width: 1.5; stroke-linecap: round; filter: drop-shadow(0 0 1.2px rgba(255, 238, 216, .8)); }
@@ -187,7 +202,8 @@
 @media (prefers-reduced-motion: reduce) {
   .ddp-intro__signet > path { animation: none; stroke-dasharray: none; }
   /* Bez ruchu nie ma też błysków: zostaje znak, poświata i napisy w stanie końcowym. */
-  .ddp-intro__glints, .ddp-intro__ray { display: none; }
+  .ddp-intro__glints, .ddp-intro__ray, .ddp-intro__shaft { display: none; }
+  .ddp-intro__foliage { animation: none; }
   .ddp-intro__bloom { animation: none; opacity: .7; }
   .ddp-intro__name, .ddp-intro__sub { animation: none; }
   /* Bez ruchu: zamiast otwierania drzwi nakładka po prostu znika. */
