@@ -28,7 +28,8 @@ Wdrożenie techniczne jest gotowe, ale **strony nie wolno jeszcze publikować ja
 
 ## Staging: demo.cerasusdigital.pl
 
-Pokazowa kopia strony na osobnej domenie, na czystym Ubuntu 22.04 lub 24.04 (jeden serwer, ta jedna aplikacja). To `APP_ENV=staging`:
+Pokazowa kopia strony na osobnej domenie, na Ubuntu 22.04 lub 24.04 (czystym albo współdzielonym z inną aplikacją: skrypt nie przestawia
+domyślnego `php` ani istniejącego Node, nasza aplikacja używa `php8.4` obok nich, a Node wystarczy 20.19+ albo 22.12+). To `APP_ENV=staging`:
 `robots.txt` blokuje indeksowanie, dokumenty prawne nie blokują wdrożenia, a poczta zapisuje wiadomości do logu, dopóki w `.env` nie ma SMTP.
 Wszystko robi `deploy/provision-staging.sh` (pakiety, PHP 8.4, PostgreSQL, Node 22, nginx, certyfikat Let's Encrypt, pierwsze wdrożenie,
 dane startowe, SSR pod Supervisorem). Przed uruchomieniem rekord A `demo.cerasusdigital.pl` musi wskazywać na ten serwer.

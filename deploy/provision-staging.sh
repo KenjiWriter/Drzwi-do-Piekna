@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 #
-# Pierwsza instalacja stagingu (demo) na czystym Ubuntu 22.04 lub 24.04: nginx, PHP 8.4, PostgreSQL, Node 22, Supervisor (SSR),
-# HTTPS z Let's Encrypt, pierwsze wdrożenie i dane startowe. Serwer ma obsługiwać tylko tę aplikację.
+# Pierwsza instalacja stagingu (demo) na Ubuntu 22.04 lub 24.04: nginx, PHP 8.4, PostgreSQL, Node, Supervisor (SSR),
+# HTTPS z Let's Encrypt, pierwsze wdrożenie i dane startowe.
 # Skrypt można uruchomić ponownie: pomija to, co już jest (nie nadpisuje .env, hasła bazy, konfiguracji nginx ani danych).
+#
+# Serwer współdzielony z inną aplikacją: skrypt dokłada własny blok nginx, własny pool PHP-FPM 8.4, własną rolę i bazę w PostgreSQL
+# i własny proces w Supervisorze. Nie przestawia domyślnego `php` ani istniejącego Node, nie rusza cudzych witryn nginx.
+# Zmienia jednak wspólne rzeczy: instaluje pakiety php8.4-*, a `apt` może zaktualizować już zainstalowane pakiety php8.4-common i
+# php8.4-mbstring. Gdy Node nie ma, instaluje 22 LTS.
 #
 #   sudo apt update && sudo apt install -y git
 #   sudo git clone https://github.com/KenjiWriter/Drzwi-do-Piekna.git /var/www/drzwidopiekna
@@ -95,11 +100,15 @@ opcache.max_accelerated_files = 10000
 opcache.validate_timestamps = 0
 INI
 
-node_major() { node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0; }
-if [ "$(node_major)" -lt 22 ]; then
+# Node instalujemy tylko, gdy go nie ma. Istniejącego nie podnosimy (na serwerze współdzielonym korzystają z niego inne aplikacje).
+# Wymagania Vite 8 i jego wtyczek: Node ^20.19 albo >=22.12.
+node_ok() { node -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit((a === 20 && b >= 19) || (a === 22 && b >= 12) || a >= 23 ? 0 : 1)' 2>/dev/null; }
+if ! command -v node >/dev/null; then
     say "Node.js 22 LTS"
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
     apt-get install -y nodejs
+elif ! node_ok; then
+    fail "Node $(node -v) jest za stary dla Vite 8 (potrzebny 20.19+ albo 22.12+). Skrypt nie podnosi go sam, bo korzystają z niego inne aplikacje: zaktualizuj Node ręcznie"
 fi
 
 if ! command -v composer >/dev/null; then
@@ -121,6 +130,10 @@ else
     git clone --branch "$BRANCH" "$REPO" "$APP_DIR"
 fi
 cd "$APP_DIR"
+
+# Gdy domyślne `php` jest starsze niż 8.4 (inna aplikacja na tym serwerze), używamy php8.4 obok niego, bez zmiany systemu.
+# shellcheck disable=SC1091
+. deploy/use-php84.sh
 
 if [ ! -f .env ]; then
     say "Baza PostgreSQL i plik .env"

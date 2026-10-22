@@ -19,6 +19,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Gdy domyślne `php` jest starsze niż 8.4 (serwer współdzielony z inną aplikacją), użyj php8.4 obok niego.
+# shellcheck disable=SC1091
+. deploy/use-php84.sh
+
 EXPECT_ENV="${EXPECT_ENV:-production}"
 SSR_SERVICE="${SSR_SERVICE-drzwidopiekna-ssr}"
 PHP_FPM_SERVICE="${PHP_FPM_SERVICE-php8.4-fpm}"
@@ -46,7 +50,8 @@ for ext in gd exif intl mbstring pdo_pgsql openssl curl dom fileinfo; do
 done
 php -r 'exit(function_exists("imagewebp") ? 0 : 1);' || fail "rozszerzenie gd bez obsługi WebP (potrzebna do zdjęć z panelu)"
 command -v node >/dev/null || fail "brak Node.js (potrzebny do budowy i do SSR)"
-node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 22 ? 0 : 1)' || fail "wymagany Node.js 22 lub nowszy"
+# Wymagania Vite 8 i jego wtyczek: Node ^20.19 albo >=22.12.
+node -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit((a === 20 && b >= 19) || (a === 22 && b >= 12) || a >= 23 ? 0 : 1)' || fail "wymagany Node.js 20.19+ albo 22.12+ (jest $(node -v))"
 
 if [ "$EXPECT_ENV" = "production" ]; then
     say "Dokumenty prawne (polityka prywatności, zgoda w formularzu)"
