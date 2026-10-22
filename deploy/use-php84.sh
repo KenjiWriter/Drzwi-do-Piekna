@@ -10,3 +10,7 @@ if ! php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);' 2>/dev/null && command -v p
     trap 'rm -rf "$DDP_PHP_SHIM"' EXIT
     echo "  Domyślne php w systemie jest starsze niż 8.4, dla tej aplikacji używam $(command -v php8.4) (system bez zmian)"
 fi
+
+# Composer zawsze uruchamiamy przez `php` z PATH (z dowiązaniem php8.4, jeśli powstało). Composer z pakietu apt ma w shebangu
+# /usr/bin/php i pominąłby dowiązanie, a wtedy użyłby domyślnego, starszego php.
+composer() { php "$(type -P composer)" "$@"; }
