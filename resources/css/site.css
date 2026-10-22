@@ -1,0 +1,66 @@
+/* Układ strony: mobile-first. Komponenty i tokeny są w ddp/. Tu tylko to, co dotyczy całej witryny. */
+html { scroll-behavior: smooth; scroll-padding-top: var(--header-h); }
+@media (min-width: 1024px) { html { scroll-padding-top: var(--header-h-lg); } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; }
+figure { margin: 0; }
+picture { display: contents; }
+
+.site { display: flex; flex-direction: column; min-height: 100svh; }
+.site__main { flex: 1; }
+.site--with-bar { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 1024px) { .site--with-bar { padding-bottom: 0; } }
+
+.skip-link { position: absolute; left: var(--space-4); top: -120px; z-index: calc(var(--z-intro) + 1); padding: var(--space-3) var(--space-5); background: var(--brand); color: var(--on-brand); font: 400 .875rem/1 var(--font-sans); }
+.skip-link:focus { top: var(--space-4); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* Przycisk na całą szerokość na telefonie, naturalnej szerokości od 640 px */
+.u-fill-sm { width: 100%; }
+@media (min-width: 640px) { .u-fill-sm { width: auto; } }
+
+/* Pomocnicze układy */
+.stack { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); }
+.effects-note { margin-top: var(--space-5); }
+.contact-lines { margin: 0; font-style: normal; font-size: 1rem; line-height: 1.7; color: var(--ink); }
+.contact-lines a { display: inline-block; padding: 8px 0; color: var(--ink); }
+
+/* Zdjęcia w panelu: kadr zależy od zdjęcia (object-position ustawia komponent) */
+.ddp-split__media img, .ddp-philo__media img { background-color: var(--photo-mid); }
+
+/* Karuzela: elementy zatrzymują się z marginesem strony */
+.ddp-carousel { scroll-padding-inline: var(--gutter); }
+@media (min-width: 1024px) { .ddp-carousel { scroll-padding-inline: 0; } }
+.ddp-review__body { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.ddp-review .ddp-carousel__nav { width: 100%; max-width: 360px; }
+
+/* Nagłówek nad otwartym menu, żeby burger zamykał menu */
+.ddp-header--open { z-index: calc(var(--z-menu) + 1); }
+
+/* Podstrony "wkrótce" */
+.soon { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--space-4); min-height: 60svh; padding: var(--space-9) var(--gutter); }
+.soon__actions { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); width: 100%; }
+@media (min-width: 640px) { .soon__actions { flex-direction: row; align-items: center; width: auto; gap: var(--space-6); } }
+@media (min-width: 1024px) { .soon { padding: var(--space-10) var(--gutter-lg); } }
+
+/* Animacja powitalna: domyślnie ukryta, pokazuje ją skrypt w <head> (html[data-intro="play"]) */
+.ddp-intro { display: none; }
+html[data-intro="play"] .ddp-intro { display: grid; animation: ddp-intro-out .7s ease 3.6s forwards; }
+/* Po otwarciu drzwi (0,15 s zwłoki + 1,4 s ruchu) nakładka przestaje zasłaniać stronę i łapać kliknięcia. */
+html[data-intro="play"] .ddp-intro--done { animation: ddp-intro-hide 0s linear 1.65s forwards; }
+@keyframes ddp-intro-out { to { opacity: 0; visibility: hidden; } }
+@keyframes ddp-intro-hide { to { visibility: hidden; pointer-events: none; } }
+
+/* Podstrony */
+.ddp-section--tight-top { padding-top: 0; }
+.pagehead-title { max-width: 20ch; }
+.values-title { margin-bottom: var(--space-5); }
+.band-actions { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); width: 100%; }
+@media (min-width: 640px) { .band-actions { flex-direction: row; align-items: center; gap: var(--space-6); width: auto; } }
+.philo-text { max-width: 36ch; }
+.article-h { margin-bottom: var(--space-4); }
+.back-link { margin-top: var(--space-5); }
+.prices-notes { max-width: 70ch; margin-top: var(--space-4); }
+.ddp-form h2 { margin-bottom: var(--space-2); }
+.ddp-form button[disabled] { opacity: .6; cursor: progress; }

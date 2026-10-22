@@ -1,0 +1,52 @@
+/* Drzwi do Piękna UI — generated from tokens.json */
+:root, [data-theme="light"] {
+  --surface: #faf6f1;
+  --surface-alt: #f2eae2;
+  --surface-deep: #e7dbd0;
+  --brand: #5c1f2e;
+  --brand-deep: #451522;
+  --ink: #3b2b2d;
+  --heading: var(--brand-deep);
+  --ink-soft: #5a4a48;
+  --muted: #6b5b58;
+  --taupe: #8c7b74;
+  --hairline: rgba(92, 31, 46, 0.18);
+  --field-border: var(--taupe);
+  --brand-tint: rgba(92, 31, 46, 0.45);
+  --on-brand: #faf6f1;
+  --on-brand-soft: #e9ddd3;
+  --on-brand-line: rgba(250, 246, 241, 0.28);
+  --focus: var(--brand);
+  --focus-on-brand: var(--on-brand);
+  --error: #b3261e;
+  --success: #2f6b4f;
+  --scrim: rgba(45, 20, 25, 0.72);
+  --photo-light: #e3c8b6;
+  --photo-mid: #b98e7b;
+  --photo-deep: #7a5446;
+  --photo-shadow: #3d2723;
+  --shadow-bar: 0 -10px 28px -14px rgba(69, 21, 34, 0.28);
+  --shadow-menu: 0 24px 48px -24px rgba(69, 21, 34, 0.35);
+}
+:root {
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px; --space-10: 128px;
+  --gutter: 24px; --gutter-lg: 64px; --container: 1440px;
+  --header-h: 68px; --header-h-lg: 96px; --touch-target: 48px;
+  --radius-none: 0px; --radius-sm: 2px; --radius-md: 6px;
+  --z-header: 40; --z-bar: 45; --z-menu: 60; --z-intro: 100;
+  --font-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --font-sans: "Jost", "Helvetica Neue", Arial, sans-serif;
+}
+.display-xl { font-family: var(--font-display); font-size: 88px; line-height: 0.96; font-weight: 500; letter-spacing: -0.012em; }
+.display-lg { font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 500; letter-spacing: -0.005em; }
+.display-md { font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 500; }
+.display-sm { font-family: var(--font-display); font-size: 28px; line-height: 1.15; font-weight: 500; }
+.quote { font-family: var(--font-display); font-size: 32px; line-height: 1.3; font-weight: 400; }
+.numeral { font-family: var(--font-display); font-size: 28px; line-height: 1; font-weight: 400; }
+.body-lg { font-family: var(--font-sans); font-size: 18px; line-height: 30px; font-weight: 300; }
+.body { font-family: var(--font-sans); font-size: 16px; line-height: 26px; font-weight: 300; }
+.body-sm { font-family: var(--font-sans); font-size: 14px; line-height: 22px; font-weight: 400; }
+.label { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 400; letter-spacing: 0.24em; }
+.button { font-family: var(--font-sans); font-size: 12.5px; line-height: 16px; font-weight: 400; letter-spacing: 0.18em; }
+.nav { font-family: var(--font-sans); font-size: 14px; line-height: 16px; font-weight: 400; letter-spacing: 0.04em; }

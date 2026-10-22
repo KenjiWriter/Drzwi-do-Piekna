@@ -1,0 +1,16 @@
+/* Fonty hostowane lokalnie (RODO, wydajność). Tylko podzbiory łacińskie: polskie znaki są w latin-ext. */
+@import '@fontsource/cormorant-garamond/latin-400.css';
+@import '@fontsource/cormorant-garamond/latin-ext-400.css';
+@import '@fontsource/cormorant-garamond/latin-500.css';
+@import '@fontsource/cormorant-garamond/latin-ext-500.css';
+@import '@fontsource/cormorant-garamond/latin-400-italic.css';
+@import '@fontsource/cormorant-garamond/latin-ext-400-italic.css';
+@import '@fontsource/jost/latin-300.css';
+@import '@fontsource/jost/latin-ext-300.css';
+@import '@fontsource/jost/latin-400.css';
+@import '@fontsource/jost/latin-ext-400.css';
+
+/* System UI: tokeny i komponenty (źródło: Drzwi do Piękna UI), potem układ stron. */
+@import './ddp/tokens.css';
+@import './ddp/components.css';
+@import './site.css';

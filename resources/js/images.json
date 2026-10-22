@@ -1,0 +1,130 @@
+{
+    "hero": {
+        "src": "/images/hero-1440.webp",
+        "srcset": "/images/hero-960.webp 960w, /images/hero-1440.webp 1440w, /images/hero-1920.webp 1920w",
+        "width": 1440,
+        "height": 810,
+        "color": "rgb(40, 24, 8)",
+        "alt": "Makro oka kobiety w ciepłym świetle z cieniem żaluzji"
+    },
+    "hero-m": {
+        "src": "/images/hero-m-800.webp",
+        "srcset": "/images/hero-m-480.webp 480w, /images/hero-m-800.webp 800w, /images/hero-m-1100.webp 1100w",
+        "width": 800,
+        "height": 1000,
+        "color": "rgb(56, 24, 8)",
+        "alt": "Makro oka kobiety w ciepłym świetle z cieniem żaluzji"
+    },
+    "interior": {
+        "src": "/images/interior-960.webp",
+        "srcset": "/images/interior-640.webp 640w, /images/interior-960.webp 960w, /images/interior-1120.webp 1120w",
+        "width": 960,
+        "height": 1212,
+        "color": "rgb(168, 152, 136)",
+        "alt": "Jasne wnętrze gabinetu z kamienną recepcją i dużymi oknami"
+    },
+    "tile-face": {
+        "src": "/images/tile-face-720.webp",
+        "srcset": "/images/tile-face-480.webp 480w, /images/tile-face-720.webp 720w, /images/tile-face-960.webp 960w",
+        "width": 720,
+        "height": 900,
+        "color": "rgb(232, 200, 168)",
+        "alt": "Twarz: makro oka w ciepłym świetle"
+    },
+    "tile-lips": {
+        "src": "/images/tile-lips-720.webp",
+        "srcset": "/images/tile-lips-480.webp 480w, /images/tile-lips-720.webp 720w, /images/tile-lips-960.webp 960w",
+        "width": 720,
+        "height": 900,
+        "color": "rgb(120, 72, 40)",
+        "alt": "Usta: naturalne, zbliżenie"
+    },
+    "tile-neck": {
+        "src": "/images/tile-neck-720.webp",
+        "srcset": "/images/tile-neck-480.webp 480w, /images/tile-neck-720.webp 720w, /images/tile-neck-960.webp 960w",
+        "width": 720,
+        "height": 900,
+        "color": "rgb(56, 40, 40)",
+        "alt": "Szyja i dekolt: miękkie światło"
+    },
+    "tile-skin": {
+        "src": "/images/tile-skin-720.webp",
+        "srcset": "/images/tile-skin-480.webp 480w, /images/tile-skin-720.webp 720w, /images/tile-skin-960.webp 960w",
+        "width": 720,
+        "height": 900,
+        "color": "rgb(104, 104, 88)",
+        "alt": "Jakość skóry: zbliżenie na obojczyk i piegi"
+    },
+    "plant": {
+        "src": "/images/plant-960.webp",
+        "srcset": "/images/plant-640.webp 640w, /images/plant-960.webp 960w, /images/plant-1280.webp 1280w",
+        "width": 960,
+        "height": 768,
+        "color": "rgb(232, 216, 200)",
+        "alt": "Trawa pampasowa rzucająca cień na jasną ścianę"
+    },
+    "vase": {
+        "src": "/images/vase-960.webp",
+        "srcset": "/images/vase-640.webp 640w, /images/vase-960.webp 960w, /images/vase-1280.webp 1280w",
+        "width": 960,
+        "height": 1200,
+        "color": "rgb(152, 120, 72)",
+        "alt": "Wazon z suszonymi kwiatami i cieniem w ciepłym świetle"
+    },
+    "philo": {
+        "src": "/images/philo-1280.webp",
+        "srcset": "/images/philo-800.webp 800w, /images/philo-1280.webp 1280w, /images/philo-1600.webp 1600w",
+        "width": 1280,
+        "height": 853,
+        "color": "rgb(40, 24, 8)",
+        "alt": "Zbliżenie na szyję i obojczyk dojrzałej kobiety"
+    },
+    "ba-1": {
+        "src": "/images/ba-1-480.webp",
+        "srcset": "/images/ba-1-320.webp 320w, /images/ba-1-480.webp 480w, /images/ba-1-720.webp 720w",
+        "width": 480,
+        "height": 640,
+        "color": "rgb(136, 136, 136)",
+        "alt": "Skóra szyi"
+    },
+    "ba-1-before": {
+        "src": "/images/ba-1-before-480.webp",
+        "srcset": "/images/ba-1-before-320.webp 320w, /images/ba-1-before-480.webp 480w, /images/ba-1-before-720.webp 720w",
+        "width": 480,
+        "height": 640,
+        "color": "rgb(136, 136, 136)",
+        "alt": "Skóra szyi"
+    },
+    "ba-2": {
+        "src": "/images/ba-2-480.webp",
+        "srcset": "/images/ba-2-320.webp 320w, /images/ba-2-480.webp 480w, /images/ba-2-720.webp 720w",
+        "width": 480,
+        "height": 640,
+        "color": "rgb(200, 136, 104)",
+        "alt": "Skóra okolic ust"
+    },
+    "ba-2-before": {
+        "src": "/images/ba-2-before-480.webp",
+        "srcset": "/images/ba-2-before-320.webp 320w, /images/ba-2-before-480.webp 480w, /images/ba-2-before-720.webp 720w",
+        "width": 480,
+        "height": 640,
+        "color": "rgb(184, 136, 104)",
+        "alt": "Skóra okolic ust"
+    },
+    "ba-3": {
+        "src": "/images/ba-3-480.webp",
+        "srcset": "/images/ba-3-320.webp 320w, /images/ba-3-480.webp 480w, /images/ba-3-720.webp 720w",
+        "width": 480,
+        "height": 640,
+        "color": "rgb(120, 72, 40)",
+        "alt": "Skóra twarzy"
+    },
+    "ba-3-before": {
+        "src": "/images/ba-3-before-480.webp",
+        "srcset": "/images/ba-3-before-320.webp 320w, /images/ba-3-before-480.webp 480w, /images/ba-3-before-720.webp 720w",
+        "width": 480,
+        "height": 640,
+        "color": "rgb(24, 24, 24)",
+        "alt": "Skóra twarzy"
+    }
+}
