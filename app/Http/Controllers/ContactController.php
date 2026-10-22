@@ -48,7 +48,7 @@ class ContactController extends Controller
         ]);
 
         try {
-            Mail::to(config('clinic.email'))->send(new ContactRequestReceived($contact));
+            Mail::to(config('clinic.notify_email') ?: config('clinic.email'))->send(new ContactRequestReceived($contact));
             $contact->forceFill(['notified_at' => now()])->save();
         } catch (Throwable $e) {
             // Zapytanie jest bezpieczne w bazie, więc awaria poczty nie psuje wizyty pacjentki.

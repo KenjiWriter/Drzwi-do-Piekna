@@ -19,6 +19,9 @@ return [
     'phone' => '797 745 224',
     'phone_e164' => '+48797745224',
     'email' => 'gabinet@drzwidopiekna.pl',
+    // Dokąd trafia powiadomienie o zgłoszeniu z formularza. Domyślnie na adres gabinetu; na stagingu ustaw własny
+    // (CLINIC_NOTIFY_EMAIL), żeby testy formularza nie wysyłały wiadomości do prawdziwej skrzynki. Nie jest publiczne (PUBLIC_CLINIC_KEYS).
+    'notify_email' => env('CLINIC_NOTIFY_EMAIL'),
 
     'address' => [
         'street' => 'Karolewska 29/31',

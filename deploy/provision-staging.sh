@@ -220,7 +220,8 @@ Zostały dwie rzeczy, które robisz ręcznie:
      Panel: https://$DOMAIN/admin$( [ "$ADMIN_2FA" = "true" ] && echo ". Po pierwszym logowaniu panel poprosi o skonfigurowanie 2FA (aplikacja uwierzytelniająca)." )
 
   2. Poczta: do czasu podania SMTP w $APP_DIR/.env (MAIL_MAILER, MAIL_HOST, ...) wiadomości z formularza zapisują się w
-     $APP_DIR/storage/logs, a nie są wysyłane. Po zmianie .env: php8.4 artisan config:clear (albo bash deploy/deploy.sh).
+     $APP_DIR/storage/logs, a nie są wysyłane. Po zmianie .env: php8.4 artisan config:cache && systemctl reload php8.4-fpm
+     (NIE samo config:clear: .env jest nieczytelny dla www-data, aplikacja działa z zapisanej konfiguracji).
 
 Kolejne wdrożenia: cd $APP_DIR && git pull --ff-only && EXPECT_ENV=staging SUDO="" bash deploy/deploy.sh
 KONIEC

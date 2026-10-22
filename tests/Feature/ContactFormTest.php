@@ -61,6 +61,16 @@ class ContactFormTest extends TestCase
         Mail::assertSent(ContactRequestReceived::class, fn ($mail) => $mail->hasTo('gabinet@drzwidopiekna.pl') && $mail->hasReplyTo('maria@example.com'));
     }
 
+    public function test_the_notification_goes_to_the_configured_address_when_set(): void
+    {
+        Mail::fake();
+        config(['clinic.notify_email' => 'test@example.com']);
+
+        $this->post('/kontakt', $this->valid())->assertRedirect('/kontakt');
+
+        Mail::assertSent(ContactRequestReceived::class, fn ($mail) => $mail->hasTo('test@example.com') && ! $mail->hasTo('gabinet@drzwidopiekna.pl'));
+    }
+
     public function test_the_request_survives_a_mail_failure(): void
     {
         Mail::shouldReceive('to')->andThrow(new \RuntimeException('SMTP down'));

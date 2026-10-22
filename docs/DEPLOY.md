@@ -47,6 +47,13 @@ Skrypt można uruchomić ponownie (nie nadpisuje `.env`, hasła bazy, konfigurac
 cd /var/www/drzwidopiekna && sudo git pull --ff-only && sudo EXPECT_ENV=staging SUDO="" bash deploy/deploy.sh
 ```
 
+**Poczta (SMTP) na stagingu.** Do czasu uzupełnienia `.env` wiadomości zapisują się w logu (`MAIL_MAILER=log`). Ustaw w `/var/www/drzwidopiekna/.env`
+(`sudo nano`) dane skrzynki (`MAIL_MAILER=smtp`, `MAIL_SCHEME=smtps`, `MAIL_HOST`, `MAIL_PORT=465`, `MAIL_USERNAME`, `MAIL_PASSWORD`,
+`MAIL_FROM_ADDRESS` taki sam jak login skrzynki) oraz `CLINIC_NOTIFY_EMAIL` na własny adres, żeby powiadomienia z testów nie szły do gabinetu.
+Potem **`sudo php8.4 artisan config:cache && sudo systemctl reload php8.4-fpm`**. Nie używaj samego `config:clear`: `.env` jest własnością roota
+(`chmod 600`), PHP-FPM go nie czyta i działa z zapisanej konfiguracji, więc po `config:clear` aplikacja przestałaby działać do kolejnego `config:cache`.
+Skrzynka, z której wysyłamy z domeny `drzwidopiekna.pl`, wymaga rekordów SPF i DKIM u dostawcy poczty (inaczej wiadomości trafią do spamu).
+
 Na stagingu panel domyślnie wymaga 2FA (`ADMIN_2FA=false` przy uruchomieniu skryptu albo `ADMIN_2FA_REQUIRED=false` w `.env` to wyłącza).
 Gdy gabinet ma oglądać demo bez widocznego adresu dla wszystkich, można dodatkowo zabezpieczyć całą domenę hasłem nginx (`auth_basic`).
 - [x] ~~Brak dwuskładnikowego logowania do `/admin`~~ **Jest** (aplikacja uwierzytelniająca + kody awaryjne, w produkcji wymagane, patrz punkt 11).
