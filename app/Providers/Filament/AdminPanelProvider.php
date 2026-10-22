@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Auth\MultiFactor\App\AppAuthentication;
+use App\Filament\Auth\EditProfile;
+use App\Support\Auth\PanelAppAuthentication;
+use App\Support\Auth\PanelEmailAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -33,14 +35,17 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('Drzwi do Piękna')
             ->login()
-            // Profil: zmiana nazwy, e-maila i hasła oraz zarządzanie dwuskładnikowym logowaniem (konfiguracja, kody awaryjne).
-            ->profile(isSimple: false)
-            // Dwuskładnikowe logowanie aplikacją (TOTP, np. Google Authenticator, Microsoft Authenticator, Authy) z kodami
-            // awaryjnymi. Panel zawiera dane pacjentek (zgłoszenia), więc w produkcji jest wymagane: konto bez 2FA po
-            // zalogowaniu trafia na ekran jego konfiguracji. Lokalnie nie jest wymagane, żeby konto deweloperskie
-            // dało się używać (włącza to ADMIN_2FA_REQUIRED, patrz config/clinic.php).
+            // Profil: zmiana nazwy, e-maila i hasła oraz zarządzanie dwuskładnikowym logowaniem (konfiguracja, kody awaryjne,
+            // przełącznik „wymagaj obu metod naraz”).
+            ->profile(EditProfile::class, isSimple: false)
+            // Dwuskładnikowe logowanie: aplikacja (TOTP, np. Google Authenticator, Microsoft Authenticator, Authy) z kodami
+            // awaryjnymi i/lub kod z e-maila. Konto włącza jedną metodę albo obie. Przy obu logując się wybiera, którą metodą
+            // się potwierdza, chyba że ma włączone „wymagaj obu” (wtedy musi podać obie, patrz StrictMultiFactorChallenge).
+            // Panel zawiera dane pacjentek (zgłoszenia), więc w produkcji 2FA jest wymagane: konto bez żadnej metody po
+            // zalogowaniu trafia na ekran konfiguracji. Lokalnie nie jest wymagane, żeby konto deweloperskie dało się
+            // używać (włącza to ADMIN_2FA_REQUIRED, patrz config/clinic.php). Kod z e-maila wymaga działającej poczty (SMTP).
             ->multiFactorAuthentication(
-                [AppAuthentication::make()->recoverable()],
+                [PanelAppAuthentication::make()->recoverable(), PanelEmailAuthentication::make()],
                 isRequired: fn () => (bool) config('clinic.admin.require_2fa'),
             )
             ->colors([

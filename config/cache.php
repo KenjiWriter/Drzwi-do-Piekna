@@ -131,6 +131,14 @@ return [
     |
     */
 
-    'serializable_classes' => false,
+    // Wyjątek: daty Carbon. Kod z e-maila w 2FA panelu (Filament) zapisuje w cache datę ważności jako obiekt Carbon. Bez tego
+    // wyjątku plikowy, bazodanowy i Redisowy cache zwracają go jako __PHP_Incomplete_Class i żaden kod z e-maila nie przechodzi
+    // weryfikacji (cache `array` w testach tego nie pokazuje, patrz
+    // AdminEmailTwoFactorTest::test_the_email_code_works_with_a_cache_that_serialises_values).
+    'serializable_classes' => [
+        \Illuminate\Support\Carbon::class,
+        \Carbon\Carbon::class,
+        \Carbon\CarbonImmutable::class,
+    ],
 
 ];

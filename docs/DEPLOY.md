@@ -277,9 +277,15 @@ niż po jednym skoku. Zestaw adresów jest w `tests/fixtures/old-site-paths.txt`
   Dalej każde logowanie wymaga kodu z aplikacji albo kodu odzyskiwania. Ustawienia: panel, avatar, Profil (można tam też wygenerować
   nowe kody odzyskiwania albo wyłączyć 2FA, gdy nie jest wymagane). Wymóg włącza się sam przy `APP_ENV=production`; `ADMIN_2FA_REQUIRED`
   wymusza go także gdzie indziej (np. staging), a `deploy.sh` nie pozwoli wdrożyć produkcji z `ADMIN_2FA_REQUIRED=false`.
-- **Utrata telefonu i kodów odzyskiwania:** nikt z panelu tego nie naprawi (bez drugiego składnika nie da się zalogować), więc robi to
-  administrator serwera: `php artisan admin:reset-2fa adres@konta.pl` (pyta o potwierdzenie, `--force` pomija pytanie). Konto
-  loguje się wtedy hasłem i konfiguruje 2FA od nowa. Przed resetem upewnij się, że o reset prosi właściwa osoba.
+- **Druga metoda: kod z e-maila.** W Profilu (sekcja dwuskładnikowego logowania) konto może włączyć też kod wysyłany na swój adres
+  (6 cyfr, ważny 4 minuty, `QUEUE_CONNECTION=sync`, więc bez workera). Działa tylko przy skonfigurowanym SMTP (punkt „Poczta” w sekcji
+  o stagingu). Konto z obiema metodami wybiera przy logowaniu jedną z nich. W Profilu można też włączyć **„wymagaj obu metod naraz”**
+  (wyłączenie wymaga hasła): każde logowanie wymaga wtedy kodu z aplikacji i kodu z e-maila, który idzie od razu po hasle. Przy takim
+  koncie awaria poczty oznacza brak dostępu do panelu, dopóki administrator serwera nie zresetuje 2FA (poniżej).
+- **Utrata telefonu i kodów odzyskiwania albo awaria poczty przy „wymagaj obu”:** nikt z panelu tego nie naprawi (bez drugiego składnika
+  nie da się zalogować), więc robi to administrator serwera: `php artisan admin:reset-2fa adres@konta.pl` (pyta o potwierdzenie, `--force`
+  pomija pytanie; usuwa aplikację, kody awaryjne, kod z e-maila i „wymagaj obu”). Konto loguje się wtedy hasłem i konfiguruje 2FA od nowa.
+  Przed resetem upewnij się, że o reset prosi właściwa osoba.
 - Sekret 2FA i kody odzyskiwania są szyfrowane kluczem aplikacji (`APP_KEY`), kody dodatkowo skrótowane. **Zmiana `APP_KEY` unieważnia
   zapisane sekrety**, więc po niej każde konto trzeba zresetować i skonfigurować od nowa (kopie zapasowe bazy bez `.env` nie wystarczą).
 - Dodatkowo można ograniczyć `/admin` do adresów IP gabinetu (zakomentowany blok na końcu `deploy/nginx/drzwidopiekna.conf`).
