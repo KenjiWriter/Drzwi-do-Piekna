@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { createIntroLight, pathSegments } from '../intro-light';
 import { SIGNET_VIEW_BOX, door, far, frame, near, outline } from '../signet';
 
 /*
@@ -15,12 +16,21 @@ import { SIGNET_VIEW_BOX, door, far, frame, near, outline } from '../signet';
  * Światło jest subtelne i miękkie, jak na zdjęciowych klatkach storyboardu: ciepłe światło okna i cień rośliny na całej planszy
  * (na skrzydłach drzwi), poświata za znakiem, jedna szeroka, rozmyta „bryza” światła w kształcie półokręgu, która płynie od lewej
  * do prawej razem z rysowaniem znaku i przechodzi przez jego środek, oraz delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek, twardych linii i
- * efektów „z kreskówki”. Tylko opacity, przesuw i przesuw kreski, bez animowanego obrotu i bez 3D
- * (CSS: .ddp-intro__light, __foliage, __bloom, __beam, __glints). Geometria znaku: resources/js/signet.js.
+ * efektów „z kreskówki”. Wersja zapasowa CSS/SVG (bez WebGL) jest płaska: tylko opacity, przesuw i przesuw kreski.
+ *
+ * Scenę 3D liczy silnik WebGL (resources/js/intro-light.js, bez bibliotek): trzy plany, czyli ściana ze słońcem przez okno
+ * i cieniem rośliny, między nią a znakiem letnia bryza światła, z przodu sygnet jako bryła (stół, ramka i obrys na różnych
+ * głębokościach, kamera ustawia się na wprost) i napisy w HTML. Płótno w każdym skrzydle renderuje swoją połowę sceny,
+ * a nakładka dostaje klasę .ddp-intro--gl, która chowa warstwy CSS i znak SVG (zostaje w układzie jako miejsce i rozmiar
+ * znaku dla kamery). Bez WebGL zostaje wersja CSS/SVG (.ddp-intro__light, __foliage, __bloom, __beam, __glints).
+ * Geometria znaku: resources/js/signet.js, czasy rysowania (strokes) są wspólne dla SVG i WebGL.
  */
 const done = ref(false);
+const gl = ref(false);
+const rootEl = ref(null);
 let timer = null;
 let finish = () => {};
+let light = null;
 
 // Linie sygnetu: [ścieżka, czas rysowania w s, opóźnienie w s]. Kolejność to kolejność rysowania (środek na zewnątrz).
 // Krótkie przekątne rysują się po rogach ramki zgodnie z ruchem wskazówek zegara, a długie dopełniają kolejne krzyże X
@@ -36,28 +46,7 @@ const strokes = [
 // Długość ścieżki z poleceń M, L, H, V i Z (współrzędne bezwzględne). Jasny punkt ma mieć na każdej linii tę samą długość
 // (kilka jednostek znaku), a ścieżki mają pathLength="1", więc jego długość trzeba podać jako ułamek tej linii.
 function pathLength(d) {
-    let x = 0;
-    let y = 0;
-    let startX = 0;
-    let startY = 0;
-    let length = 0;
-
-    for (const [, command, args] of d.matchAll(/([MLHVZ])([^MLHVZ]*)/g)) {
-        const n = args.trim() ? args.trim().split(/[\s,]+/).map(Number) : [];
-        let nx = x;
-        let ny = y;
-
-        if (command === 'M' || command === 'L') [nx, ny] = n;
-        if (command === 'H') nx = n[0];
-        if (command === 'V') ny = n[0];
-        if (command === 'Z') [nx, ny] = [startX, startY];
-        if (command !== 'M') length += Math.hypot(nx - x, ny - y);
-        if (command === 'M') [startX, startY] = [nx, ny];
-
-        [x, y] = [nx, ny];
-    }
-
-    return length;
+    return pathSegments(d).reduce((sum, [x0, y0, x1, y1]) => sum + Math.hypot(x1 - x0, y1 - y0), 0);
 }
 
 const GLINT_LENGTH = 4;
@@ -136,14 +125,31 @@ onMounted(() => {
         clearTimeout(timer);
         window.removeEventListener('keydown', skip);
         done.value = true;
+        light?.finish();
         try {
             sessionStorage.setItem('ddp-intro', '1');
         } catch (e) {
             // tryb prywatny: pomijamy zapis
         }
-        // Po otwarciu drzwi (CSS: 0,15 s zwłoki + 1,4 s ruchu) nakładka jest ukrywana, a potem zdejmujemy znacznik.
-        setTimeout(() => delete root.dataset.intro, 2000);
+        // Po otwarciu drzwi (CSS: 0,15 s zwłoki + 1,4 s ruchu) nakładka jest ukrywana, a potem zdejmujemy znacznik i gasimy światło.
+        setTimeout(() => {
+            delete root.dataset.intro;
+            light?.destroy();
+            light = null;
+        }, 2000);
     };
+
+    // Scena 3D (WebGL). Przy ograniczonym ruchu (intro wymuszone przez ?intro) rysuje jedną nieruchomą klatkę.
+    const motion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    light = createIntroLight({
+        root: rootEl.value,
+        canvases: [...rootEl.value.querySelectorAll('.ddp-intro__gl')],
+        signet: rootEl.value.querySelector('.ddp-intro__signet'),
+        strokes,
+        plant,
+        motion,
+    });
+    gl.value = light !== null;
 
     timer = setTimeout(finish, 3000);
     window.addEventListener('keydown', skip);
@@ -152,12 +158,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
     clearTimeout(timer);
     window.removeEventListener('keydown', skip);
+    light?.destroy();
+    light = null;
 });
 </script>
 
 <template>
-    <div class="ddp-intro" :class="{ 'ddp-intro--done': done }" aria-hidden="true" @click="skip">
+    <div ref="rootEl" class="ddp-intro" :class="{ 'ddp-intro--done': done, 'ddp-intro--gl': gl }" aria-hidden="true" @click="skip">
         <div v-for="side in sides" :key="side" class="ddp-intro__leaf" :class="`ddp-intro__leaf--${side}`">
+            <!-- Scena 3D (WebGL): płótno pokazuje połowę sceny należącą do tego skrzydła (intro-light.js). -->
+            <canvas class="ddp-intro__gl"></canvas>
             <div class="ddp-intro__light">
                 <!-- Cień rośliny widać tylko na prawym skrzydle (jak na zdjęciowych klatkach storyboardu), więc kształt leży tylko tam. -->
                 <template v-if="side === 'right'">

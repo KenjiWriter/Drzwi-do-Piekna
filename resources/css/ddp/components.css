@@ -174,6 +174,16 @@
    róg, szerokie smugi światła przechodzące przez całą planszę i miękkie cienie liści. Leży na skrzydłach drzwi: każde skrzydło pokazuje
    swoją połowę tej samej sceny (warstwa ma szerokość całej nakładki), więc światło rozchyla się razem z drzwiami. */
 .ddp-intro__light { position: absolute; top: 0; bottom: 0; width: calc(200% - 2px); pointer-events: none; }
+/* Światło WebGL (resources/js/intro-light.js): płótno w każdym skrzydle renderuje swoją połowę sceny (słońce z półcieniem, cień rośliny,
+   bryza, poświata). Gdy działa, nakładka ma klasę .ddp-intro--gl i warstwy CSS (gradient skrzydła, światło, roślina, bryza, poświata)
+   są schowane; bez WebGL zostają one jako wersja zapasowa. Płótno jest zawsze pod warstwami CSS i pod znakiem. */
+.ddp-intro__gl { position: absolute; inset: 0; display: block; width: 100%; height: 100%; visibility: hidden; }
+.ddp-intro--gl .ddp-intro__gl { visibility: visible; }
+.ddp-intro--gl .ddp-intro__leaf { background: var(--intro-mid); }
+.ddp-intro--gl .ddp-intro__light, .ddp-intro--gl .ddp-intro__beam, .ddp-intro--gl .ddp-intro__bloom { display: none; }
+/* Przy WebGL znak rysuje silnik 3D; SVG zostaje niewidoczny w układzie, bo wyznacza miejsce i rozmiar znaku dla kamery. */
+.ddp-intro--gl .ddp-intro__signet { visibility: hidden; }
+.ddp-intro--gl .ddp-intro__signet > path, .ddp-intro--gl .ddp-intro__glints path { animation: none; }
 .ddp-intro__leaf--left .ddp-intro__light { left: 0; }
 .ddp-intro__leaf--right .ddp-intro__light { right: 0; }
 .ddp-intro__light::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 85% 120% at 0% 0%, rgba(255, 252, 247, .92), rgba(255, 252, 247, 0) 70%), radial-gradient(ellipse 75% 95% at 100% 100%, rgba(100, 78, 64, .24), rgba(100, 78, 64, 0) 74%); }

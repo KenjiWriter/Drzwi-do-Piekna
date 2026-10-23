@@ -96,7 +96,7 @@ Uruchomienie lokalnie: `php artisan serve` i `npm run dev`. Produkcja: `npm run 
 | Frontend | Vue 3 (`<script setup>`) + Inertia.js 3 | Jedna aplikacja, routing i walidacja w Laravelu, brak osobnego API |
 | SEO | Inertia **SSR** (wtyczka `@inertiajs/vite`, Node 22+) + meta i JSON-LD z szablonu Blade | Pełny HTML dla robotów i szybki pierwszy render na telefonie |
 | Style | Czysty CSS z systemu UI (`resources/css/ddp/*`), bez Tailwinda | Jeden plik komponentów używany w projekcie i w płótnie Design; spójność 1:1 |
-| Animacje | CSS + SVG (`stroke-dashoffset`), bez bibliotek | Animacja powitalna to rysowanie linii; zero kilobajtów JS na ruch |
+| Animacje | CSS + SVG (`stroke-dashoffset`) na stronie; intro jako scena 3D w WebGL (`resources/js/intro-light.js`), bez bibliotek | Światło, cień i bryłę znaku liczy GPU; bez WebGL zostaje wersja CSS/SVG |
 | Fonty | `@fontsource` (Cormorant Garamond, Jost), własny hosting | RODO (brak Google Fonts) i wydajność |
 | Testy | Pest (feature) + Lighthouse CI | Kontrola SEO i wydajności przy każdej zmianie |
 | Panel (faza 3) | Filament 5 pod `/admin` | Redagowanie zabiegów, cennika, zespołu i zgłoszeń bez programisty (blog i opinie dojdą później) |
@@ -124,6 +124,7 @@ Zasady: treść w `lang/pl` i `config/clinic.php`, nie w komponentach; komponent
 ## 3. Animacja powitalna
 
 - Nakładka `ddp-intro` rysuje sygnet (drzwi, szlif, obrys), potem pojawia się nazwa i napis MEDYCYNA ESTETYCZNA. Około 2,8 s, sceny i czasy jak w storyboardzie na płótnie.
+- Scena 3D (2026-10-23): lekki silnik WebGL, `resources/js/intro-light.js`. Trzy plany: ściana ze słońcem przez okno (tafla wędruje od lewej do prawej) i cieniem rośliny, między nią a znakiem letnia bryza światła, z przodu sygnet jako bryła (plany na różnych głębokościach, kamera ustawia się na wprost) i napisy. Światło przechodzi przez znak w głąb i rozświetla krawędzie, znak rzuca miękki cień na ścianę. Płótno w każdym skrzydle drzwi renderuje swoją połowę sceny. Bez WebGL zostaje wersja CSS/SVG. Szczegóły i zasady w `CLAUDE.md`.
 - Gra raz na sesję (`sessionStorage`), da się pominąć dotykiem lub klawiszem. Przy `prefers-reduced-motion` nie gra.
 - Nie opóźnia pierwszego renderu: strona ładuje się pod nakładką. Gdy JS zawiedzie, nakładka nie może zasłaniać treści (domyślnie ukryta, pokazuje ją skrypt).
 - Zakazane: połysk, glow, cząsteczki, obrót, 3D, morfing.
