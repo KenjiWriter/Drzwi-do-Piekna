@@ -25,20 +25,20 @@
 .ddp-logo { display: inline-flex; align-items: center; gap: var(--space-4); color: var(--ink); text-decoration: none; }
 .ddp-logo__signet { flex: none; width: 34px; height: auto; fill: none; stroke: var(--brand); stroke-width: 2.6; stroke-linejoin: round; }
 .ddp-logo__text { display: flex; flex-direction: column; gap: 5px; }
-.ddp-logo__name { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; line-height: 1; color: var(--heading); }
+.ddp-logo__name { font-family: var(--font-logo); font-weight: 400; font-size: 1.375rem; line-height: 1; color: var(--heading); }
 .ddp-logo__sub { font: 400 .5625rem/1 var(--font-sans); letter-spacing: .34em; text-transform: uppercase; color: var(--muted); }
 .ddp-logo--stacked { flex-direction: column; gap: var(--space-5); text-align: center; }
 .ddp-logo--stacked .ddp-logo__text { align-items: center; }
 .ddp-logo--stacked .ddp-logo__signet { width: 56px; }
-.ddp-logo--stacked .ddp-logo__name { font-size: 2rem; }
+.ddp-logo--stacked .ddp-logo__name { font-size: 1.8rem; }
 .ddp-logo--on-brand .ddp-logo__signet { stroke: var(--on-brand); }
 .ddp-logo--on-brand .ddp-logo__name { color: var(--on-brand); }
 .ddp-logo--on-brand .ddp-logo__sub { color: var(--on-brand-soft); }
 @media (min-width: 1024px) {
   .ddp-logo__signet { width: 38px; }
-  .ddp-logo__name { font-size: 1.75rem; }
+  .ddp-logo__name { font-size: 1.6rem; }
   .ddp-logo--stacked .ddp-logo__signet { width: 56px; }
-  .ddp-logo--stacked .ddp-logo__name { font-size: 2rem; }
+  .ddp-logo--stacked .ddp-logo__name { font-size: 1.8rem; }
 }
 
 /* Przyciski i linki */
@@ -214,11 +214,13 @@ html[data-intro-flip] .ddp-intro__beam { scale: -1 1; transform-origin: 26vmax 5
 @keyframes ddp-flare { 0% { opacity: 0; translate: -3vmin 3vmin; } 35% { opacity: .85; } 100% { opacity: 0; translate: 3vmin -3vmin; } }
 @keyframes ddp-bloom { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: .7; } }
 @keyframes ddp-glint { 0% { stroke-dashoffset: var(--dash, .05); opacity: 0; } 10% { opacity: .8; } 85% { opacity: .8; } 100% { stroke-dashoffset: -1; opacity: 0; } }
-.ddp-intro__name { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.25rem, 1.5rem + 3.4vw, 4rem); line-height: 1; color: var(--ink); animation: ddp-rise .55s ease 1.65s both; }
-.ddp-intro__sub { padding-left: .46em; font: 400 .6875rem/1 var(--font-sans); letter-spacing: .46em; text-transform: uppercase; color: var(--muted); animation: ddp-rise .35s ease 2.2s both; }
+.ddp-intro { --intro-name-size: clamp(2rem, 1.3rem + 3vw, 3.5rem); }
+.ddp-intro__name { font-family: var(--font-logo); font-weight: 400; font-size: var(--intro-name-size); line-height: 1; letter-spacing: -.005em; color: var(--brand); animation: ddp-rise .55s ease 1.65s both; }
+/* Podtytuł jak na wizualizacji klienta: kapitaliki w kolorze marki, wysokość ok. 0,27 wysokości nazwy, a rozstrzelenie takie, że zajmuje ok. 0,9 szerokości nazwy (na telefonie węższe, bo najmniejszy rozmiar pisma jest stały). */
+.ddp-intro__sub { padding-left: .48em; font: 400 max(.6875rem, calc(var(--intro-name-size) * .27))/1 var(--font-sans); letter-spacing: .48em; text-transform: uppercase; color: var(--brand); animation: ddp-rise .35s ease 2.2s both; }
+@media (min-width: 768px) { .ddp-intro__sub { padding-left: .72em; letter-spacing: .72em; } }
 @keyframes ddp-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes ddp-rise { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-@media (min-width: 768px) { .ddp-intro__sub { font-size: .75rem; } }
 @media (prefers-reduced-motion: reduce) {
   .ddp-intro__signet > path { animation: none; stroke-dasharray: none; }
   /* Bez ruchu nie ma też błysków: zostaje znak, poświata i napisy w stanie końcowym. */

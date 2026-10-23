@@ -5,6 +5,9 @@
 @import '@fontsource/cormorant-garamond/latin-ext-500.css';
 @import '@fontsource/cormorant-garamond/latin-400-italic.css';
 @import '@fontsource/cormorant-garamond/latin-ext-400-italic.css';
+/* Krój logotypu (nazwa gabinetu w nagłówku, stopce i animacji powitalnej): najbliższy wizualizacji klienta spośród darmowych. */
+@import '@fontsource/gilda-display/latin-400.css';
+@import '@fontsource/gilda-display/latin-ext-400.css';
 @import '@fontsource/jost/latin-300.css';
 @import '@fontsource/jost/latin-ext-300.css';
 @import '@fontsource/jost/latin-400.css';
