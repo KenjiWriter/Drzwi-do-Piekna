@@ -44,7 +44,7 @@ cd /var/www/drzwidopiekna && sudo php artisan make:filament-user      # konto do
 Skrypt można uruchomić ponownie (nie nadpisuje `.env`, hasła bazy, konfiguracji nginx ani danych). Kolejne wdrożenia:
 
 ```bash
-cd /var/www/drzwidopiekna && sudo git pull --ff-only && sudo EXPECT_ENV=staging SUDO="" bash deploy/deploy.sh
+cd /var/www/drzwidopiekna && sudo bash deploy/update.sh
 ```
 
 **Poczta (SMTP) na stagingu.** Do czasu uzupełnienia `.env` wiadomości zapisują się w logu (`MAIL_MAILER=log`). Ustaw w `/var/www/drzwidopiekna/.env`
@@ -188,11 +188,19 @@ deploy ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart drzwidopiekna-ssr, /u
 
 ## 6. Kolejne wdrożenia
 
+Jednym poleceniem (pobiera zmiany z gita, pokazuje, co się zmieni, i wdraża):
+
 ```bash
 cd /var/www/drzwidopiekna
-git pull --ff-only          # albo rsync
-bash deploy/deploy.sh
+sudo bash deploy/update.sh
 ```
+
+`deploy/update.sh` bierze środowisko z `APP_ENV` w `.env` (staging zostaje stagingiem), odmawia, gdy w katalogu są lokalne zmiany w plikach
+śledzonych przez git, i przed wdrożeniem wypisuje nowe commity oraz ostrzeżenia: nowe migracje, zmiany zależności, zmiany szablonu `.env`
+(czy trzeba dopisać zmienne) i zmiany w konfiguracji nginx/Supervisora (tych `deploy.sh` nie stosuje, trzeba je skopiować ręcznie).
+Opcje: `--dry-run` (tylko pokaż zmiany), `--force` (wdróż także, gdy kod się nie zmienił, np. po zmianie `.env`), `--to <commit>`
+(wdróż wskazaną wersję, czyli powrót do starszej; kolejny zwykły `update.sh` wraca na `main`). Po wdrożeniu skrypt podaje poprzednią wersję
+i polecenie powrotu. Ręcznie to samo robią `git pull --ff-only` i `bash deploy/deploy.sh` (albo `rsync` zamiast gita).
 
 Skrypt sprawdza środowisko (`APP_ENV`, `APP_DEBUG`, rozszerzenia PHP, wersje PHP i Node), włącza ekran przerwy technicznej,
 instaluje zależności, buduje front (klient i SSR), uruchamia migracje, buduje cache, przeładowuje PHP-FPM i SSR, wyłącza przerwę i testuje

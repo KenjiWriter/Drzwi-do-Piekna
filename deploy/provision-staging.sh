@@ -223,5 +223,5 @@ Zostały dwie rzeczy, które robisz ręcznie:
      $APP_DIR/storage/logs, a nie są wysyłane. Po zmianie .env: php8.4 artisan config:cache && systemctl reload php8.4-fpm
      (NIE samo config:clear: .env jest nieczytelny dla www-data, aplikacja działa z zapisanej konfiguracji).
 
-Kolejne wdrożenia: cd $APP_DIR && git pull --ff-only && EXPECT_ENV=staging SUDO="" bash deploy/deploy.sh
+Kolejne wdrożenia (pobranie z gita, lista zmian, deploy): cd $APP_DIR && sudo bash deploy/update.sh
 KONIEC
