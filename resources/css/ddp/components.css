@@ -186,6 +186,11 @@
 .ddp-intro--gl .ddp-intro__signet > path, .ddp-intro--gl .ddp-intro__glints path { animation: none; }
 .ddp-intro__leaf--left .ddp-intro__light { left: 0; }
 .ddp-intro__leaf--right .ddp-intro__light { right: 0; }
+/* Ziarno światła: skrypt w <head> ustawia html[data-intro-flip] przy nieparzystym ziarnie, a wtedy słońce wpada z prawej. Wersja zapasowa
+   odbija się w poziomie tak samo jak scena WebGL. Warstwa światła ma szerokość całej nakładki, więc odbicia obu skrzydeł składają się w jedno
+   odbicie sceny; bryza ma środek obrotu w środku nakładki (26vmax od jej lewej krawędzi), a scale odwraca też kierunek jej ruchu. */
+html[data-intro-flip] .ddp-intro__light { scale: -1 1; }
+html[data-intro-flip] .ddp-intro__beam { scale: -1 1; transform-origin: 26vmax 50%; }
 .ddp-intro__light::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 85% 120% at 0% 0%, rgba(255, 252, 247, .92), rgba(255, 252, 247, 0) 70%), radial-gradient(ellipse 75% 95% at 100% 100%, rgba(100, 78, 64, .24), rgba(100, 78, 64, 0) 74%); }
 .ddp-intro__foliage { position: absolute; width: 56vmax; height: auto; overflow: visible; fill: #5a463a; stroke: #5a463a; stroke-width: 1.2; stroke-linecap: round; opacity: .15; filter: blur(4px); animation: ddp-sway 7s ease-in-out infinite alternate; }
 .ddp-intro__stem { fill: none; stroke-width: 2; }

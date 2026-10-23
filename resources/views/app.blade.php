@@ -33,7 +33,7 @@
         <title inertia>{{ config('app.name') }}</title>
     @endif
 
-    {{-- Animacja powitalna: gra raz na sesję, nie gra przy ograniczonym ruchu ani w trybie automatyzacji. ?intro wymusza odtworzenie. --}}
+    {{-- Animacja powitalna: gra raz na sesję, nie gra przy ograniczonym ruchu ani w trybie automatyzacji. ?intro wymusza odtworzenie, ?intro=N także układ światła N. --}}
     <script>
         (function () {
             var d = document.documentElement;
@@ -41,7 +41,15 @@
                 var forced = /[?&]intro(=|&|$)/.test(location.search);
                 var seen = sessionStorage.getItem('ddp-intro');
                 var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.webdriver;
-                if (forced || (!seen && !calm)) { d.setAttribute('data-intro', 'play'); }
+                if (forced || (!seen && !calm)) {
+                    // Ziarno układu światła: losowe przy każdym odtworzeniu (nie jest nigdzie zapisywane), ?intro=N wymusza ziarno N.
+                    // Nieparzyste ziarno odbija światło w poziomie (wpada z prawej): wersja CSS czyta to z data-intro-flip, scena WebGL z ziarna.
+                    var fixed = /[?&]intro=(\d+)/.exec(location.search);
+                    var seed = fixed ? parseInt(fixed[1], 10) % 4294967296 : Math.floor(Math.random() * 4294967296);
+                    d.setAttribute('data-intro', 'play');
+                    d.setAttribute('data-intro-seed', seed);
+                    if (seed % 2) { d.setAttribute('data-intro-flip', ''); }
+                }
             } catch (e) {}
         })();
     </script>

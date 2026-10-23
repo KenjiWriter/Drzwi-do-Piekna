@@ -32,6 +32,17 @@ class HomePageTest extends TestCase
                 ->where('clinic.email', 'gabinet@drzwidopiekna.pl'));
     }
 
+    public function test_home_page_head_script_seeds_the_intro_light(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // Ziarno układu światła: losowe przy każdym odtworzeniu, ?intro=N wymusza ziarno N, a nieparzyste odbija światło (CSS czyta data-intro-flip).
+        $this->assertStringContainsString('Math.random() * 4294967296', $html);
+        $this->assertStringContainsString('intro=(\d+)', $html);
+        $this->assertStringContainsString("d.setAttribute('data-intro-seed', seed)", $html);
+        $this->assertStringContainsString("if (seed % 2) { d.setAttribute('data-intro-flip', ''); }", $html);
+    }
+
     public function test_home_page_ships_seo_in_the_html(): void
     {
         $response = $this->get('/')->assertOk();

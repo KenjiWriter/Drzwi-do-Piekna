@@ -18,6 +18,10 @@ import { SIGNET_VIEW_BOX, door, far, frame, near, outline } from '../signet';
  * do prawej razem z rysowaniem znaku i przechodzi przez jego środek, oraz delikatny jasny punkt na końcu rysowanej linii. Bez gwiazdek, twardych linii i
  * efektów „z kreskówki”. Wersja zapasowa CSS/SVG (bez WebGL) jest płaska: tylko opacity, przesuw i przesuw kreski.
  *
+ * Kierunek światła zależy od ziarna: skrypt w <head> losuje je przy każdym odtworzeniu (html[data-intro-seed], a ?intro=N wymusza
+ * układ N), a lightFromSeed() w intro-light.js zamienia je na stronę, z której wpada słońce, kąt i tor tafli oraz cień rośliny.
+ * Wersja CSS/SVG odbija się tylko w poziomie (html[data-intro-flip], nieparzyste ziarno), tak samo jak scena WebGL.
+ *
  * Scenę 3D liczy silnik WebGL (resources/js/intro-light.js, bez bibliotek): trzy plany, czyli ściana ze słońcem przez okno
  * i cieniem rośliny, między nią a znakiem letnia bryza światła, z przodu sygnet jako bryła (stół, ramka i obrys na różnych
  * głębokościach, kamera ustawia się na wprost) i napisy w HTML. Płótno w każdym skrzydle renderuje swoją połowę sceny,
@@ -139,6 +143,10 @@ onMounted(() => {
         }, 2000);
     };
 
+    // Ziarno układu światła zapisał skrypt w <head> (dzięki temu wersja CSS i scena WebGL odbijają światło tak samo od pierwszej klatki).
+    const fromHead = Number.parseInt(root.dataset.introSeed ?? '', 10);
+    const seed = Number.isNaN(fromHead) ? Math.floor(Math.random() * 4294967296) : fromHead;
+
     // Scena 3D (WebGL). Przy ograniczonym ruchu (intro wymuszone przez ?intro) rysuje jedną nieruchomą klatkę.
     const motion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     light = createIntroLight({
@@ -148,6 +156,7 @@ onMounted(() => {
         strokes,
         plant,
         motion,
+        seed,
     });
     gl.value = light !== null;
 

@@ -14,23 +14,37 @@
  *      wizualizacji klienta (współrzędne planów są skalowane tak, by rzut perspektywiczny zgadzał się z geometrią 2D z signet.js).
  *      Kamera zaczyna lekko z boku i z góry i ustawia się na wprost w czasie rysowania, więc widać głębię, a końcowa klatka jest
  *      identyczna ze znakiem 2D. Tafla słońca jest pochylona także w głąb: przechodząc przez znak rozświetla najpierw plany
- *      bliższe widza, potem dalsze (krawędzie jaśnieją i dostają miękką poświatę), a znak rzuca na ścianę miękki cień zgodnie
- *      z kierunkiem światła. Linie rysują się w tej kolejności i czasie co w storyboardzie (dane z Intro.vue), z jasnym punktem
+ *      bliższe widza, potem dalsze (krawędzie jaśnieją i dostają miękką poświatę). Znak NIE rzuca cienia na ścianę: cień rozmywał
+ *      linie i znak był niewyraźny (decyzja użytkownika z 2026-10-23), a znak ma być zawsze ostry. Linie rysują się w tej kolejności i czasie co w storyboardzie (dane z Intro.vue), z jasnym punktem
  *      na końcu rysowanej linii.
- * Bez gwiazdek, cząsteczek i ozdobników: tylko światło, cień i bryła. Przy ograniczonym ruchu jedna nieruchoma klatka (znak
+ * Bez gwiazdek, cząsteczek i ozdobników: tylko światło, cień rośliny i bryła. Przy ograniczonym ruchu jedna nieruchoma klatka (znak
  * narysowany, kamera na wprost). Bez WebGL Intro.vue zostaje przy wersji CSS/SVG.
  *
+ * Układ światła zależy od ziarna (seed), więc przy każdym odtworzeniu jest inny (patrz lightFromSeed): skrypt w <head> losuje ziarno
+ * i zapisuje je w html[data-intro-seed], a ?intro=N wymusza ziarno N (podgląd i testy). Nieparzyste ziarno odbija całą scenę w poziomie
+ * (słońce wpada z prawej, to samo dotyczy cienia rośliny, bryzy i kamery), a reszta zmienia kąt tafli, tor jej ruchu (lekko w górę
+ * albo w dół), położenie, szerokość i stronę drugiej tafli oraz to, czy cień rośliny pada u góry, czy u dołu.
+ *
  * Każde skrzydło drzwi ma własne płótno, które pokazuje swoją połowę tej samej sceny (u_origin / u_remap), więc obraz rozchyla się
- * razem z drzwiami. Płótna renderują w obniżonej rozdzielczości: światło jest miękkie, oszczędzamy GPU.
+ * razem z drzwiami. Płótna renderują w pełnej rozdzielczości urządzenia (do 1,5 x; na bardzo dużych ekranach do 0,75), bo kreski znaku
+ * muszą być ostre.
  */
 
 // Wspólny fragment GLSL: położenie tafli słońca w czasie. q to współrzędne ekranu (środek w (0,0), jednostka = wysokość sceny,
 // y w dół), k skaluje smugę na wąskich ekranach, z to głębokość punktu (jednostki znaku, dodatnia bliżej widza).
 const SUN_GLSL = `
 float ease(float x) { x = clamp(x, 0.0, 1.0); return x * x * (3.0 - 2.0 * x); }
-vec2 sunDir() { return normalize(vec2(0.72, 1.0)); }
+// Układ światła z ziarna (lightFromSeed). Wszystko liczymy w układzie, w którym słońce wpada z lewej; przy nieparzystym ziarnie scenę
+// odbijamy w poziomie przed obliczeniem (u_look.x = -1), więc światło wpada z prawej.
+uniform vec4 u_sun;    // (kierunek ruchu tafli x, y, oś tafli x, y)
+uniform vec4 u_shape;  // (środek toru x, y, szerokość tafli, odstęp drugiej tafli ze znakiem)
+uniform vec2 u_look;   // (-1 lub 1: odbicie w poziomie, 0 lub 1: cień rośliny odwrócony w pionie)
+vec2 sunDir() { return u_sun.zw; }
 float sunTravel(float t) { return ease(t / 3.0) + 0.02 * max(t - 3.0, 0.0); }
-vec2 sunCenter(float t, float k) { return vec2((-0.62 + 1.08 * sunTravel(t) + 0.012 * sin(t * 0.5)) * k, -0.06); }
+vec2 sunCenter(float t, float k) {
+    vec2 c = u_shape.xy + u_sun.xy * (1.08 * (sunTravel(t) - 0.5) + 0.012 * sin(t * 0.5));
+    return vec2(c.x * k, c.y);
+}
 // Odległość od osi tafli (w poprzek), z pochyleniem w głąb: punkty bliżej widza (z > 0) światło mija wcześniej.
 float sunS(vec2 q, float t, float k, float z) {
     vec2 dir = sunDir();
@@ -90,19 +104,25 @@ void main() {
     float t = u_motion > 0.5 ? u_time : 3.0;           // bez ruchu: klatka po przejściu bryzy
     float k = clamp(aspect / 1.5, 0.5, 1.0);           // na wąskim ekranie (pion) smuga jest węższa i bliżej środka
 
-    // 1. Światło rozproszone: ciemniejsze brzegi (zwłaszcza prawy dolny róg) i ciepła plama okna w lewym górnym rogu.
-    float edge = length((q - vec2(-0.12 * k, -0.08)) * vec2(0.82, 1.0));
+    // Układ, w którym słońce wpada z lewego górnego rogu; przy nieparzystym ziarnie scena jest odbita w poziomie (światło z prawej).
+    float m = u_look.x;
+    vec2 qm = vec2(q.x * m, q.y);
+    vec2 uvm = vec2(m > 0.0 ? uv.x : 1.0 - uv.x, uv.y);
+
+    // 1. Światło rozproszone: ciemniejsze brzegi (zwłaszcza dolny róg po stronie przeciwnej do słońca) i ciepła plama okna w rogu.
+    float edge = length((qm - vec2(-0.12 * k, -0.08)) * vec2(0.82, 1.0));
     float ambient = 0.40 - 0.26 * smoothstep(0.30, 1.15, edge);
-    vec2 corner = uv * vec2(aspect, 1.0);
+    vec2 corner = uvm * vec2(aspect, 1.0);
     ambient += 0.20 * exp(-dot(corner, corner) * 1.6);
 
-    // 2. Słońce przez okno: szeroki ukośny pas z lewego górnego rogu z miękkim półcieniem, wędruje przez planszę od lewej do
+    // 2. Słońce przez okno: szeroki ukośny pas z miękkim półcieniem (kąt, tor i strona z ziarna), wędruje przez planszę, domyślnie od lewej do
     //    prawej przez czas rysowania znaku (ok. 3 s, jak w kolejnych klatkach storyboardu), przechodzi przez środek około 1,4 s,
     //    potem powoli dryfuje dalej i lekko „oddycha”.
-    float s = sunS(q, t, k, 0.0);
-    float along = sunAlong(q, t, k);
-    float band = smoothstep(0.42 * k, 0.22 * k, abs(s));
-    float band2 = 0.40 * smoothstep(0.26 * k, 0.10 * k, abs(s - 0.66 * k));
+    float s = sunS(qm, t, k, 0.0);
+    float along = sunAlong(qm, t, k);
+    float width = k * u_shape.z;
+    float band = smoothstep(0.42 * width, 0.22 * width, abs(s));
+    float band2 = 0.40 * smoothstep(0.26 * width, 0.10 * width, abs(s - u_shape.w * k));
     float fall = 1.0 - 0.45 * smoothstep(-0.55, 0.95, along);
     float sun = 0.68 * (band + band2) * fall * sunBreath(t);
 
@@ -110,8 +130,9 @@ void main() {
     //    widoczny głównie w słońcu.
     float travel = sunTravel(t);
     float sway = sin(t * 0.45 - 1.2);
-    vec2 uvS = uv + vec2(-0.014 * sway + 0.035 * (travel - 0.5), 0.009 * sway) * u_motion;
-    uvS += 0.0035 * vec2(sin(uv.y * 9.0 + t * 0.8), cos(uv.x * 7.0 + t * 0.6)) * u_motion;
+    vec2 uvS = uvm + vec2(-0.014 * sway, 0.009 * sway) * u_motion + 0.035 * u_sun.xy * (travel - 0.5) * u_motion;
+    uvS += 0.0035 * vec2(sin(uvm.y * 9.0 + t * 0.8), cos(uvm.x * 7.0 + t * 0.6)) * u_motion;
+    uvS.y = mix(uvS.y, 1.0 - uvS.y, u_look.y);
     float sh = shadow(uvS, 0.009);
     float lit = ambient * (1.0 - 0.36 * sh) + sun * (1.0 - 0.72 * sh);
 
@@ -121,12 +142,12 @@ void main() {
     // 4. Letnia bryza (plan między ścianą a znakiem): szeroki, rozmyty półokrąg światła płynący od lewej do prawej przez środek
     //    znaku (ok. 0,25 do 2,9 s), lekko falujący w pionie jak podmuch wiatru, z własną paralaksą względem kamery (u_breeze).
     float p = ease((t - 0.25) / 2.65);
-    float bx = mix(-0.75 * aspect - 0.2, 0.75 * aspect + 0.2, p) + u_breeze.x;
-    float by = 0.05 * sin(t * 1.3 + 0.6) * u_motion + u_breeze.y;
+    float bx = mix(-0.75 * aspect - 0.2, 0.75 * aspect + 0.2, p) + u_breeze.x * m;
+    float by = 0.05 * sin(t * 1.3 + 0.6) * u_motion + u_breeze.y + 1.1 * u_sun.y * (p - 0.5);
     float R = max(0.62, 0.5 * aspect);
-    float d = length(q - vec2(bx, by));
+    float d = length(qm - vec2(bx, by));
     float blob = pow(1.0 - smoothstep(0.0, R, d), 1.6);
-    float tail = smoothstep(-0.55 * R, 0.12 * R, q.x - bx);
+    float tail = smoothstep(-0.55 * R, 0.12 * R, qm.x - bx);
     float env = smoothstep(0.0, 0.14, p) * (1.0 - smoothstep(0.8, 1.0, p)) * u_motion;
     col = mix(col, WARM, 0.32 * blob * tail * env * (1.0 - 0.3 * sh));
 
@@ -197,7 +218,6 @@ uniform float u_time;
 uniform float u_motion;
 uniform float u_core;     // połowa grubości kreski w pikselach
 uniform float u_fade;     // 1 widoczne, 0 wygaszone (po otwarciu drzwi)
-uniform float u_shadow;   // 1 = przebieg cienia znaku na ścianie
 uniform float u_pxu;      // pikseli na jednostkę znaku
 uniform float u_k;
 
@@ -224,18 +244,9 @@ void main() {
     float started = step(0.0005, progress);              // odcinek nie istnieje, dopóki nie zaczął się rysować
 
     // Słońce na krawędzi: tafla pochylona w głąb mija najpierw plany bliższe widza. Na krawędziach jest węższa niż na ścianie.
-    float s = sunS(v_q, t, u_k, v_z);
+    vec2 qm = vec2(v_q.x * u_look.x, v_q.y);
+    float s = sunS(qm, t, u_k, v_z);
     float lit = smoothstep(0.30 * u_k, 0.06 * u_k, abs(s)) * sunBreath(t);
-
-    if (u_shadow > 0.5) {
-        // Cień znaku na ścianie: szerszy, miękki, tylko tam, gdzie pada słońce; pojawia się razem z rysowaną linią.
-        float wall = smoothstep(0.42 * u_k, 0.22 * u_k, abs(sunS(v_q, t, u_k, 0.0)));
-        float a = (1.0 - smoothstep(0.0, u_core * 4.5, d)) * 0.13 * wall * started;
-        a *= 1.0 - smoothstep(drawnPx, drawnPx + 1.6, tPx);
-        a *= smoothstep(-u_core * 2.0, 0.0, tPx) * (1.0 - smoothstep(lenPx, lenPx + u_core * 2.0, tPx));
-        gl_FragColor = vec4(vec3(0.40, 0.28, 0.26), a * u_fade);
-        return;
-    }
 
     // Kreska z miękką krawędzią, zakończenia prostopadłe, rysowana wzdłuż odcinka.
     float core = 1.0 - smoothstep(u_core - 0.6, u_core + 0.6, d);
@@ -243,15 +254,14 @@ void main() {
     float ends = smoothstep(-u_core - 0.6, -u_core + 0.6, tPx) * (1.0 - smoothstep(lenPx + u_core - 0.6, lenPx + u_core + 0.6, tPx));
     float alpha = core * head * ends * started;
 
-    // Światło na krawędzi: linia jaśnieje i dostaje miękką poświatę, gdy mija ją tafla słońca.
-    float halo = exp(-pow(d / (u_core + 2.4), 2.0)) * lit * 0.45 * head * ends * started;
-
     // Jasny punkt na końcu rysowanej linii (tylko podczas rysowania).
     float drawing = step(0.001, progress) * step(progress, 0.999);
     float tip = exp(-pow((drawnPx - tPx) / 3.0, 2.0)) * drawing * core;
 
-    vec3 col = mix(INK, GLOW, clamp(lit * 0.5 + tip * 0.9, 0.0, 1.0));
-    gl_FragColor = vec4(col, clamp(alpha + halo, 0.0, 1.0) * u_fade);
+    // Światło słońca tylko odrobinę rozjaśnia linię, gdy ją mija. Bez poświaty wokół kreski: ciemna, rozmyta obwódka robiła ze znaku
+    // plamę, a mocne rozjaśnienie wypłukiwało kolor. Znak ma być zawsze ostry i wyraźny (decyzja użytkownika z 2026-10-23).
+    vec3 col = mix(INK, GLOW, clamp(lit * 0.1 + tip * 0.9, 0.0, 1.0));
+    gl_FragColor = vec4(col, alpha * u_fade);
 }
 `;
 
@@ -387,18 +397,53 @@ const mat = {
         const s = Math.sin(a);
         return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]);
     },
-    // Rzut cienia wzdłuż kierunku światła L na płaszczyznę ściany z = -wall.
-    shadow(L, wall) {
-        const kx = -L[0] / L[2];
-        const ky = -L[1] / L[2];
-        return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, kx, ky, 0, 0, kx * wall, ky * wall, -wall, 1]);
-    },
 };
 
+// Generator pseudolosowy z ziarna (mulberry32): to samo ziarno zawsze daje ten sam układ światła.
+function mulberry32(a) {
+    return () => {
+        a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/**
+ * Układ światła z ziarna. Obliczenia w shaderach są zawsze w układzie, w którym słońce wpada z lewego górnego rogu i płynie w prawo;
+ * `flip` (-1 przy nieparzystym ziarnie) odbija to w poziomie, więc słońce wpada z prawej i płynie w lewo. Reszta to kąt ruchu tafli
+ * (lekko w górę lub w dół), skos jej osi, przesunięcie toru względem znaku (znak zawsze zostaje w świetle), szerokość, odstęp i strona
+ * drugiej tafli oraz odwrócenie cienia rośliny w pionie. Zakresy są wąskie, żeby każdy układ był subtelny i przyjemny.
+ */
+export function lightFromSeed(seed) {
+    const id = seed >>> 0;
+    const rng = mulberry32(id);
+    rng();
+    rng();
+    const range = (a, b) => a + (b - a) * rng();
+
+    const sweep = range(-0.42, 0.42); // kąt ruchu tafli względem poziomu (rad, y w dół)
+    const skew = range(-0.25, 0.85); // o ile oś tafli odchyla się od prostopadłej do ruchu (rad)
+    const axis = [Math.sin(skew - sweep), Math.cos(skew - sweep)]; // oś tafli (zawsze w dół, więc światło słabnie ku dołowi)
+    const perp = [axis[1], -axis[0]]; // prostopadła do osi, w stronę ruchu
+    const off = range(-0.14, 0.08); // przesunięcie toru w poprzek względem środka znaku
+    const along = range(-0.12, 0.12); // i wzdłuż osi
+
+    return {
+        flip: id % 2 ? -1 : 1,
+        sun: [Math.cos(sweep), Math.sin(sweep), axis[0], axis[1]],
+        shape: [
+            perp[0] * off + axis[0] * along,
+            -0.02 + perp[1] * off + axis[1] * along,
+            range(0.88, 1.15),
+            (rng() < 0.5 ? -1 : 1) * range(0.55, 0.8),
+        ],
+        plantFlip: rng() < 0.4 ? 1 : 0,
+    };
+}
+
 const FOV = (26 * Math.PI) / 180;
-const WALL = 42; // odległość ściany za ramką znaku (jednostki znaku)
 const BREEZE_DEPTH = -34; // plan bryzy: między ścianą a znakiem
-const LIGHT = [0.32, -0.42, -1]; // kierunek światła: z lewego górnego rogu, w dół, w prawo i w głąb
 const ease = (x) => {
     x = Math.min(Math.max(x, 0), 1);
     return x * x * (3 - 2 * x);
@@ -427,7 +472,7 @@ function program(gl, vertex, fragment, uniformNames) {
     return { program: p, uniforms };
 }
 
-function createLeaf(canvas, plantCanvas, lines) {
+function createLeaf(canvas, plantCanvas, lines, look) {
     const gl = canvas.getContext('webgl', {
         alpha: false,
         antialias: false,
@@ -439,9 +484,10 @@ function createLeaf(canvas, plantCanvas, lines) {
     });
     if (!gl) return null;
 
-    const wall = program(gl, WALL_VERTEX, WALL_FRAGMENT, ['u_res', 'u_origin', 'u_scene', 'u_time', 'u_motion', 'u_breeze', 'u_plant']);
+    const wall = program(gl, WALL_VERTEX, WALL_FRAGMENT, ['u_res', 'u_origin', 'u_scene', 'u_time', 'u_motion', 'u_breeze', 'u_plant', 'u_sun', 'u_shape', 'u_look']);
     const line = program(gl, LINE_VERTEX, LINE_FRAGMENT, [
-        'u_mvp', 'u_dist', 'u_scene', 'u_remap', 'u_center', 'u_half', 'u_time', 'u_motion', 'u_core', 'u_fade', 'u_shadow', 'u_pxu', 'u_k',
+        'u_mvp', 'u_dist', 'u_scene', 'u_remap', 'u_center', 'u_half', 'u_time', 'u_motion', 'u_core', 'u_fade', 'u_pxu', 'u_k',
+        'u_sun', 'u_shape', 'u_look',
     ]);
 
     const quad = gl.createBuffer();
@@ -471,6 +517,14 @@ function createLeaf(canvas, plantCanvas, lines) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plantCanvas);
 
+    // Układ światła z ziarna jest stały przez całe intro, więc ustawiamy go raz w obu programach.
+    for (const { program: handle, uniforms } of [line, wall]) {
+        gl.useProgram(handle);
+        gl.uniform4f(uniforms.u_sun, ...look.sun);
+        gl.uniform4f(uniforms.u_shape, ...look.shape);
+        gl.uniform2f(uniforms.u_look, look.flip, look.plantFlip);
+    }
+
     gl.useProgram(wall.program);
     gl.uniform1i(wall.uniforms.u_plant, 0);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -480,11 +534,14 @@ function createLeaf(canvas, plantCanvas, lines) {
 
 /**
  * Uruchamia scenę na podanych płótnach (po jednym w każdym skrzydle). `root` to nakładka intro (scena), `signet` to element
- * znaku w układzie strony (jego położenie i szerokość wyznaczają kamerę), `strokes` to ścieżki znaku z czasami z Intro.vue.
+ * znaku w układzie strony (jego położenie i szerokość wyznaczają kamerę), `strokes` to ścieżki znaku z czasami z Intro.vue,
+ * a `seed` to ziarno układu światła (lightFromSeed).
  * Zwraca { finish, destroy } albo null, gdy WebGL jest niedostępny (wtedy zostaje wersja CSS).
  */
-export function createIntroLight({ root, canvases, signet, strokes, plant, motion = true }) {
+export function createIntroLight({ root, canvases, signet, strokes, plant, motion = true, seed = 0 }) {
     if (typeof window === 'undefined' || !window.WebGLRenderingContext) return null;
+
+    const look = lightFromSeed(seed);
 
     const leaves = [];
     let frame = 0;
@@ -496,8 +553,12 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
     const layout = () => {
         const rootRect = root.getBoundingClientRect();
         if (rootRect.width < 1 || rootRect.height < 1) return false;
-        // Światło jest miękkie, więc renderujemy w obniżonej rozdzielczości i pozwalamy przeglądarce je powiększyć.
-        const scale = Math.min(window.devicePixelRatio || 1, 1.5) * 0.66;
+        // Kreski znaku muszą być ostre, więc renderujemy w pełnej rozdzielczości urządzenia (do 1,5 x). Przy bardzo dużych
+        // ekranach (powyżej ok. 2,4 mln pikseli) zmniejszamy ją, ale nie poniżej 0,75, żeby oszczędzić GPU: światło jest miękkie,
+        // więc tego nie widać, a kreski mają wciąż ok. 1,3 piksela. Wcześniej było stałe 0,66 i znak był rozmyty (powiększany).
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const area = rootRect.width * rootRect.height * dpr * dpr;
+        const scale = dpr * (area > 2.4e6 ? Math.max(0.75, Math.sqrt(2.4e6 / area)) : 1);
         const sceneW = Math.round(rootRect.width * scale);
         const sceneH = Math.round(rootRect.height * scale);
         const plantCanvas = bakePlant(plant, sceneW, sceneH);
@@ -542,15 +603,15 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
         const fade = fadeStart === null ? 1 : Math.max(0, 1 - (now - fadeStart) / 450);
         const t = motion ? time : 10;
 
-        // Kamera zaczyna lekko z lewej i z góry i ustawia się na wprost w czasie rysowania (potem ledwie zauważalnie oddycha).
+        // Kamera zaczyna lekko z boku (od strony, z której wpada słońce) i z góry i ustawia się na wprost w czasie rysowania
+        // (potem ledwie zauważalnie oddycha).
         const settle = motion ? 1 - ease(time / 3.1) : 0;
-        const yaw = (-6 * settle + (motion ? 0.5 * Math.sin(time * 0.6) : 0)) * (Math.PI / 180);
+        const yaw = (-6 * settle * look.flip + (motion ? 0.5 * Math.sin(time * 0.6) : 0)) * (Math.PI / 180);
         const pitch = (3.5 * settle + (motion ? 0.35 * Math.sin(time * 0.45 + 1) : 0)) * (Math.PI / 180);
         const model = mat.multiply(mat.rotateX(pitch), mat.rotateY(yaw));
         const view = mat.translate(0, 0, -camera.dist);
         const proj = mat.perspective(FOV, camera.aspect, 1, camera.dist * 4);
         const mvp = mat.multiply(proj, mat.multiply(view, model));
-        const mvpShadow = mat.multiply(proj, mat.multiply(view, mat.multiply(mat.shadow(LIGHT, WALL), model)));
         const k = Math.min(Math.max(camera.aspect / 1.5, 0.5), 1);
         const core = Math.max(0.55, 0.7 * camera.pxu);
         // Paralaksa planu bryzy: punkt na głębokości BREEZE_DEPTH przesuwa się przy obrocie kamery (jednostki q = wysokość sceny).
@@ -593,14 +654,8 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
             gl.uniform1f(line.uniforms.u_pxu, camera.pxu);
             gl.uniform1f(line.uniforms.u_k, k);
 
-            // Najpierw cień znaku na ścianie, potem kreski.
-            gl.uniformMatrix4fv(line.uniforms.u_mvp, false, mvpShadow);
-            gl.uniform1f(line.uniforms.u_shadow, 1);
-            gl.uniform1f(line.uniforms.u_half, core * 4.5 + 1);
-            gl.drawElements(gl.TRIANGLES, leaf.count, gl.UNSIGNED_SHORT, 0);
-
+            // Kreski znaku (bez cienia rzucanego na ścianę: znak ma być ostry).
             gl.uniformMatrix4fv(line.uniforms.u_mvp, false, mvp);
-            gl.uniform1f(line.uniforms.u_shadow, 0);
             gl.uniform1f(line.uniforms.u_half, core + 4);
             gl.drawElements(gl.TRIANGLES, leaf.count, gl.UNSIGNED_SHORT, 0);
             for (const [loc] of leaf.lineAttrs) gl.disableVertexAttribArray(loc);
@@ -620,9 +675,9 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
 
     try {
         const lines = buildLines(strokes);
-        const seed = bakePlant(plant, 16, 9, 16);
+        const blank = bakePlant(plant, 16, 9, 16);
         for (const canvas of canvases) {
-            const leaf = createLeaf(canvas, seed, lines);
+            const leaf = createLeaf(canvas, blank, lines, look);
             if (!leaf) return null;
             leaves.push({ ...leaf, canvas, origin: [0, 0], remap: [1, 0, 1, 0] });
         }
