@@ -31,8 +31,9 @@
  * (decyzja użytkownika z 2026-10-23: „światło powinno wpadać z jednego miejsca”, nie przesuwa się tafla ani bryza), a rusza się
  * pokój: kamera powoli najeżdża i przesuwa się razem z rysowaniem znaku, a cień liści faluje na wietrze.
  * Na tło nakładają się błyski ze storyboardu klienta („błyskawice”): miękka, zwężająca się smuga światła, która w czasie rysowania
- * długich przekątnych przecina znak po przekątnej (ok. 48 stopni, z lekkim dryfem), oraz słabe promienie z narożników ramki, które
- * przedłużają krótkie przekątne. Rozmyte, jasne, krótkotrwałe i delikatne, w shaderze ściany pod kreskami znaku (kreski zostają ostre).
+ * długich przekątnych biegnie od lewego dolnego rogu przez znak do jego górnego prawego narożnika (38 do 56 stopni, z lekkim dryfem),
+ * gdzie robi miękki, okrągły rozbłysk (flara), oraz słabe promienie z narożników ramki, które przedłużają krótkie przekątne i krzyżują
+ * się ze smugą. Błyski się NIE odbijają razem ze sceną (decyzja użytkownika z 2026-10-23): flara jest zawsze przy prawym górnym narożniku. Rozmyte, jasne, krótkotrwałe i delikatne, w shaderze ściany pod kreskami znaku (kreski zostają ostre).
  * Zdjęcie wczytuje się asynchronicznie (skrypt w <head> robi preload): do tego czasu widać scenę proceduralną (z przesuwającą się taflą), a po wczytaniu
  * zdjęcie wchodzi płynnie (0,7 s). Bez zdjęcia (błąd sieci) zostaje scena proceduralna.
  *
@@ -218,17 +219,19 @@ void main() {
     float bloom = exp(-dot(qc, qc) / 0.075) * 0.26 * bloomEnv * (1.0 - 0.4 * u_plateMix);
     col = mix(col, vec3(1.0, 0.985, 0.965), bloom);
 
-    // 6. Błyski ze storyboardu klienta, pod kreskami znaku: (a) jedna smuga światła przecina znak po przekątnej od lewego dolnego rogu
-    //    ku prawemu górnemu (przy odbiciu sceny odwrotnie), zwęża się ku końcom (najjaśniejsza przy znaku), ma miękki rdzeń i szeroką
-    //    poświatę, lekko dryfuje w poprzek i trwa ok. 1,5 s; (b) słabe promienie z narożników ramki przedłużają krótkie przekątne, gdy
-    //    się rysują. Zawsze miękkie: dwie równoległe, cienkie linie przez cały ekran wyglądały jak odrzucone „białe linie na skos”,
+    // 6. Błyski ze storyboardu klienta, pod kreskami znaku (nie odbijają się razem ze sceną, więc flara jest zawsze przy prawym górnym
+    //    narożniku): (a) jedna smuga światła biegnie od lewego dolnego rogu przez znak do jego górnego prawego narożnika, zwęża się ku
+    //    końcom (najjaśniejsza przy znaku), ma miękki rdzeń i szeroką poświatę, lekko dryfuje w poprzek i trwa ok. 1,5 s, a w narożniku
+    //    robi miękki, okrągły rozbłysk (flarę); (b) słabe promienie z narożników ramki przedłużają krótkie przekątne, gdy się rysują, i
+    //    krzyżują się ze smugą. Zawsze miękkie: dwie równoległe, cienkie linie przez cały ekran wyglądały jak odrzucone „białe linie na skos”,
     //    a mocne promienie z narożników jak gwiazdki. Bez ruchu (ograniczony ruch) błysków nie ma.
     {
         vec2 rel = q - u_mark.xy;
         float w = u_mark.z;
-        vec2 dir = normalize(vec2(m * cos(u_flare.x), -sin(u_flare.x)));
+        vec2 corner = vec2(0.36, -0.46) * w;                  // górny prawy narożnik znaku
+        vec2 dir = vec2(cos(u_flare.x), -sin(u_flare.x));     // od lewego dolnego rogu ku prawemu górnemu, bez odbicia
         vec2 nor = vec2(-dir.y, dir.x);
-        float across = dot(rel, nor) - (t - 1.4) * 0.05 - u_flare.y * w;
+        float across = dot(rel - corner, nor) - (t - 1.4) * 0.05 - u_flare.y * w * 0.5;
         float along = dot(rel, dir) + 0.10;
         float taper = gauss(along / 0.36);
         float streak = glintProfile(across);
@@ -238,7 +241,9 @@ void main() {
         float rays = cornerRay(rel, vec2(-0.215, -0.27) * w, w) + cornerRay(rel, vec2(0.215, -0.27) * w, w)
                    + cornerRay(rel, vec2(-0.215, 0.27) * w, w) + cornerRay(rel, vec2(0.215, 0.27) * w, w);
 
-        col += vec3(1.0, 0.95, 0.88) * (0.68 * streak * taper * streakEnv + 0.10 * rays * rayEnv);
+        float spotR = length(rel - corner);
+        float spot = gauss(spotR / (0.20 * w)) + 0.4 * gauss(spotR / (0.55 * w));     // miękki, okrągły rozbłysk w narożniku
+        col += vec3(1.0, 0.95, 0.88) * (0.68 * streak * taper * streakEnv + 0.40 * spot * streakEnv + 0.10 * rays * rayEnv);
     }
 
     col += (hash(gl_FragCoord.xy + fract(t) * 17.0) - 0.5) * (2.0 / 255.0);
