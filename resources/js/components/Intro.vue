@@ -204,6 +204,8 @@ onBeforeUnmount(() => {
         <div class="ddp-intro__stack">
             <div class="ddp-intro__mark">
                 <div class="ddp-intro__bloom"></div>
+                <!-- Błysk ze storyboardu klienta (wersja zapasowa bez WebGL): miękka, zwężająca się smuga światła przecina znak po przekątnej. -->
+                <div class="ddp-intro__flare"></div>
                 <svg class="ddp-intro__signet" :viewBox="SIGNET_VIEW_BOX" focusable="false">
                     <path v-for="stroke in strokes" :key="stroke[0]" pathLength="1" :d="stroke[0]" :style="timing(stroke)" />
 

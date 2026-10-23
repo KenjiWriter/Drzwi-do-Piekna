@@ -29,8 +29,11 @@
  * (scripts/intro-plates.mjs, pliki public/intro/plate-N.webp w skali szarości). Samo światło proceduralne wyglądało płasko, a zdjęcie
  * daje fakturę tynku i prawdziwe, miękkie cienie liści. Shader zamienia jasność zdjęcia na paletę marki. Światło stoi w miejscu
  * (decyzja użytkownika z 2026-10-23: „światło powinno wpadać z jednego miejsca”, nie przesuwa się tafla ani bryza), a rusza się
- * pokój: kamera powoli najeżdża i przesuwa się razem z rysowaniem znaku, a cień liści faluje na wietrze. Zdjęcie wczytuje się
- * asynchronicznie (skrypt w <head> robi preload): do tego czasu widać scenę proceduralną (z przesuwającą się taflą), a po wczytaniu
+ * pokój: kamera powoli najeżdża i przesuwa się razem z rysowaniem znaku, a cień liści faluje na wietrze.
+ * Na tło nakładają się błyski ze storyboardu klienta („błyskawice”): miękka, zwężająca się smuga światła, która w czasie rysowania
+ * długich przekątnych przecina znak po przekątnej (ok. 48 stopni, z lekkim dryfem), oraz słabe promienie z narożników ramki, które
+ * przedłużają krótkie przekątne. Rozmyte, jasne, krótkotrwałe i delikatne, w shaderze ściany pod kreskami znaku (kreski zostają ostre).
+ * Zdjęcie wczytuje się asynchronicznie (skrypt w <head> robi preload): do tego czasu widać scenę proceduralną (z przesuwającą się taflą), a po wczytaniu
  * zdjęcie wchodzi płynnie (0,7 s). Bez zdjęcia (błąd sieci) zostaje scena proceduralna.
  *
  * Każde skrzydło drzwi ma własne płótno, które pokazuje swoją połowę tej samej sceny (u_origin / u_remap), więc obraz rozchyla się
@@ -78,6 +81,8 @@ uniform sampler2D u_plant; // cień rośliny (alfa), w układzie całej sceny
 uniform sampler2D u_plate; // płyta tła: zdjęcie ściany w skali szarości (jednostka 1)
 uniform vec4 u_plateXf;    // (skala x, skala y, przesunięcie x, y): z układu sceny do układu płyty
 uniform float u_plateMix;  // 0 scena proceduralna, 1 pełna płyta (płynne wejście po wczytaniu zdjęcia)
+uniform vec3 u_mark;       // znak na ekranie: środek (jednostki q) i szerokość (jednostka = wysokość sceny)
+uniform vec2 u_flare;      // (kąt smugi w radianach od poziomu, przesunięcie w poprzek w szerokościach znaku)
 
 // Kolory ściany: w pełnym świetle i w cieniu (cień odrobinę chłodniejszy, fiołkowy jak na zdjęciach storyboardu).
 const vec3 LIT = vec3(0.965, 0.922, 0.875);
@@ -87,6 +92,24 @@ const vec3 WARM = vec3(1.0, 0.975, 0.935);
 ${SUN_GLSL}
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+float gauss(float x) { return exp(-x * x); }
+
+// Przekrój błysku w poprzek: gorący, wąski rdzeń, szersza poświata i bardzo szeroka, ledwie widoczna mgiełka.
+float glintProfile(float across) {
+    return 0.45 * gauss(across / 0.005) + 0.30 * gauss(across / 0.022) + 0.14 * gauss(across / 0.07);
+}
+
+// Miękki promień światła wychodzący z narożnika ramki na zewnątrz (przedłużenie krótkiej przekątnej): rdzeń i szersza poświata,
+// zanika wraz z odległością od narożnika. rel to położenie względem środka znaku, w to szerokość znaku.
+float cornerRay(vec2 rel, vec2 corner, float w) {
+    vec2 dir = normalize(corner);
+    vec2 nor = vec2(-dir.y, dir.x);
+    float al = dot(rel - corner, dir);
+    float ac = dot(rel - corner, nor);
+    float lateral = 0.6 * gauss(ac / 0.008) + 0.5 * gauss(ac / 0.026);
+    return lateral * smoothstep(-0.02 * w, 0.12 * w, al) * (1.0 - smoothstep(0.22 * w, 0.65 * w, al));
+}
 
 // Rozmyty cień rośliny: 12 próbek na dysku Poissona, promień w ułamku wysokości sceny.
 float shadow(vec2 uv, float r) {
@@ -192,8 +215,31 @@ void main() {
     // 5. Poświata za znakiem (rośnie z rysowaniem, potem lekko opada) i ziarno przeciw pasom w gradientach.
     float bloomEnv = u_motion > 0.5 ? mix(ease(t / 1.2), 0.72, ease((t - 1.2) / 1.6)) : 0.72;
     vec2 qc = q - vec2(0.0, -0.02);
-    float bloom = exp(-dot(qc, qc) / 0.075) * 0.26 * bloomEnv;
+    float bloom = exp(-dot(qc, qc) / 0.075) * 0.26 * bloomEnv * (1.0 - 0.4 * u_plateMix);
     col = mix(col, vec3(1.0, 0.985, 0.965), bloom);
+
+    // 6. Błyski ze storyboardu klienta, pod kreskami znaku: (a) jedna smuga światła przecina znak po przekątnej od lewego dolnego rogu
+    //    ku prawemu górnemu (przy odbiciu sceny odwrotnie), zwęża się ku końcom (najjaśniejsza przy znaku), ma miękki rdzeń i szeroką
+    //    poświatę, lekko dryfuje w poprzek i trwa ok. 1,5 s; (b) słabe promienie z narożników ramki przedłużają krótkie przekątne, gdy
+    //    się rysują. Zawsze miękkie: dwie równoległe, cienkie linie przez cały ekran wyglądały jak odrzucone „białe linie na skos”,
+    //    a mocne promienie z narożników jak gwiazdki. Bez ruchu (ograniczony ruch) błysków nie ma.
+    {
+        vec2 rel = q - u_mark.xy;
+        float w = u_mark.z;
+        vec2 dir = normalize(vec2(m * cos(u_flare.x), -sin(u_flare.x)));
+        vec2 nor = vec2(-dir.y, dir.x);
+        float across = dot(rel, nor) - (t - 1.4) * 0.05 - u_flare.y * w;
+        float along = dot(rel, dir) + 0.10;
+        float taper = gauss(along / 0.36);
+        float streak = glintProfile(across);
+        float streakEnv = smoothstep(0.55, 1.15, t) * (1.0 - smoothstep(1.55, 2.35, t)) * u_motion;
+
+        float rayEnv = smoothstep(0.4, 0.8, t) * (1.0 - smoothstep(1.2, 1.9, t)) * u_motion;
+        float rays = cornerRay(rel, vec2(-0.215, -0.27) * w, w) + cornerRay(rel, vec2(0.215, -0.27) * w, w)
+                   + cornerRay(rel, vec2(-0.215, 0.27) * w, w) + cornerRay(rel, vec2(0.215, 0.27) * w, w);
+
+        col += vec3(1.0, 0.95, 0.88) * (0.68 * streak * taper * streakEnv + 0.10 * rays * rayEnv);
+    }
 
     col += (hash(gl_FragCoord.xy + fract(t) * 17.0) - 0.5) * (2.0 / 255.0);
     gl_FragColor = vec4(col, 1.0);
@@ -481,6 +527,7 @@ export function lightFromSeed(seed) {
         plate: Math.floor(id / 2), // numer płyty tła (kto go używa, bierze modulo liczby płyt)
         zoom: range(1, 1.16), // przybliżenie zdjęcia (różny kadr tej samej płyty)
         pan: [range(-1, 1), range(-1, 1)], // przesunięcie kadru w granicach luzu
+        flare: [range(0.66, 0.98), range(-0.04, 0.04)], // kąt smugi (38 do 56 stopni od poziomu) i przesunięcie w poprzek znaku
     };
 }
 
@@ -535,7 +582,7 @@ function createLeaf(canvas, plantCanvas, lines, look) {
     });
     if (!gl) return null;
 
-    const wall = program(gl, WALL_VERTEX, WALL_FRAGMENT, ['u_res', 'u_origin', 'u_scene', 'u_time', 'u_motion', 'u_breeze', 'u_plant', 'u_plate', 'u_plateXf', 'u_plateMix', 'u_sun', 'u_shape', 'u_look']);
+    const wall = program(gl, WALL_VERTEX, WALL_FRAGMENT, ['u_res', 'u_origin', 'u_scene', 'u_time', 'u_motion', 'u_breeze', 'u_plant', 'u_plate', 'u_plateXf', 'u_plateMix', 'u_mark', 'u_flare', 'u_sun', 'u_shape', 'u_look']);
     const line = program(gl, LINE_VERTEX, LINE_FRAGMENT, [
         'u_mvp', 'u_dist', 'u_scene', 'u_remap', 'u_center', 'u_half', 'u_time', 'u_motion', 'u_core', 'u_fade', 'u_pxu', 'u_k',
         'u_sun', 'u_shape', 'u_look',
@@ -592,6 +639,8 @@ function createLeaf(canvas, plantCanvas, lines, look) {
     gl.uniform1i(wall.uniforms.u_plate, 1);
     gl.uniform1f(wall.uniforms.u_plateMix, 0);
     gl.uniform4f(wall.uniforms.u_plateXf, 1, 1, 0, 0);
+    gl.uniform3f(wall.uniforms.u_mark, 0, 0, 0.2);
+    gl.uniform2f(wall.uniforms.u_flare, look.flare[0], look.flare[1]);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     return { gl, wall, line, quad, quadAttr, lineBuffer, lineIndex, lineAttrs, stride, texture, plateTexture, count: lines.count };
@@ -661,6 +710,12 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
             const { gl, texture } = leaf;
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plantCanvas);
+        }
+        // Znak w jednostkach shadera (q: środek sceny w (0,0), jednostka = wysokość sceny, y w dół): środek i szerokość.
+        const markQ = [(camera.center[0] * camera.aspect) / 2, -camera.center[1] / 2, (120 * pxu) / sceneH];
+        for (const leaf of leaves) {
+            leaf.gl.useProgram(leaf.wall.program);
+            leaf.gl.uniform3f(leaf.wall.uniforms.u_mark, ...markQ);
         }
         placePlate();
         return true;
