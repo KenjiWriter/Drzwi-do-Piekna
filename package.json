@@ -6,7 +6,8 @@
         "build": "vite build && vite build --ssr",
         "dev": "vite",
         "images": "node scripts/images.mjs",
-        "mail-assets": "node scripts/mail-assets.mjs"
+        "mail-assets": "node scripts/mail-assets.mjs",
+        "intro-plates": "node scripts/intro-plates.mjs"
     },
     "devDependencies": {
         "@inertiajs/vite": "^3.9.1",

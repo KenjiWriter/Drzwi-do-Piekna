@@ -14,6 +14,8 @@ return [
     'name' => 'Drzwi do Piękna',
     'tagline' => 'Medycyna estetyczna',
     'doctor' => 'dr Anita Symonowicz',
+    // Liczba płyt tła animacji powitalnej (public/intro/plate-0.webp ... , scripts/intro-plates.mjs). Skrypt w <head> losuje numer płyty.
+    'intro_plates' => 4,
     'doctor_role' => 'Lekarz medycyny estetycznej, stomatolog',
 
     'phone' => '797 745 224',

@@ -23,7 +23,15 @@
  * Układ światła zależy od ziarna (seed), więc przy każdym odtworzeniu jest inny (patrz lightFromSeed): skrypt w <head> losuje ziarno
  * i zapisuje je w html[data-intro-seed], a ?intro=N wymusza ziarno N (podgląd i testy). Nieparzyste ziarno odbija całą scenę w poziomie
  * (słońce wpada z prawej, to samo dotyczy cienia rośliny, bryzy i kamery), a reszta zmienia kąt tafli, tor jej ruchu (lekko w górę
- * albo w dół), położenie, szerokość i stronę drugiej tafli oraz to, czy cień rośliny pada u góry, czy u dołu.
+ * albo w dół), położenie, szerokość i stronę drugiej tafli, to, czy cień rośliny pada u góry, czy u dołu, oraz płytę tła i jej kadr.
+ *
+ * Tło to zdjęcie (płyta): pusty pokój, gładka ściana z jednym źródłem światła (okno) i cieniem liści, wygenerowana w Artlist
+ * (scripts/intro-plates.mjs, pliki public/intro/plate-N.webp w skali szarości). Samo światło proceduralne wyglądało płasko, a zdjęcie
+ * daje fakturę tynku i prawdziwe, miękkie cienie liści. Shader zamienia jasność zdjęcia na paletę marki. Światło stoi w miejscu
+ * (decyzja użytkownika z 2026-10-23: „światło powinno wpadać z jednego miejsca”, nie przesuwa się tafla ani bryza), a rusza się
+ * pokój: kamera powoli najeżdża i przesuwa się razem z rysowaniem znaku, a cień liści faluje na wietrze. Zdjęcie wczytuje się
+ * asynchronicznie (skrypt w <head> robi preload): do tego czasu widać scenę proceduralną (z przesuwającą się taflą), a po wczytaniu
+ * zdjęcie wchodzi płynnie (0,7 s). Bez zdjęcia (błąd sieci) zostaje scena proceduralna.
  *
  * Każde skrzydło drzwi ma własne płótno, które pokazuje swoją połowę tej samej sceny (u_origin / u_remap), więc obraz rozchyla się
  * razem z drzwiami. Płótna renderują w pełnej rozdzielczości urządzenia (do 1,5 x; na bardzo dużych ekranach do 0,75), bo kreski znaku
@@ -67,6 +75,9 @@ uniform float u_time;      // sekundy od startu animacji
 uniform float u_motion;    // 1 ruch, 0 nieruchoma klatka (ograniczony ruch)
 uniform vec2 u_breeze;     // paralaksa planu bryzy (jednostki q) przy ruchu kamery
 uniform sampler2D u_plant; // cień rośliny (alfa), w układzie całej sceny
+uniform sampler2D u_plate; // płyta tła: zdjęcie ściany w skali szarości (jednostka 1)
+uniform vec4 u_plateXf;    // (skala x, skala y, przesunięcie x, y): z układu sceny do układu płyty
+uniform float u_plateMix;  // 0 scena proceduralna, 1 pełna płyta (płynne wejście po wczytaniu zdjęcia)
 
 // Kolory ściany: w pełnym świetle i w cieniu (cień odrobinę chłodniejszy, fiołkowy jak na zdjęciach storyboardu).
 const vec3 LIT = vec3(0.965, 0.922, 0.875);
@@ -139,6 +150,33 @@ void main() {
     vec3 col = mix(DARK, LIT, clamp(lit, 0.0, 1.0));
     col += vec3(0.030, 0.012, -0.015) * sun;             // słońce jest cieplejsze niż światło rozproszone
 
+    // Płyta tła: pusty pokój z jednym, nieruchomym źródłem światła (okno), a tafla słońca i bryza proceduralnej sceny znikają. Jasność
+    // zdjęcia jest mapowana na paletę marki (od cienia do światła). Rusza się tylko pokój i cień liści: kamera powoli najeżdża i
+    // przesuwa się w bok razem z ustawianiem się znaku (tło jest najdalszym planem, znak ma własną paralaksę), a cień liści faluje
+    // na wietrze. Liście poznajemy po tym, że zdjęcie jest w nich ciemniejsze niż w okolicy (cztery próbki wokół punktu).
+    if (u_plateMix > 0.0) {
+        float push = u_motion > 0.5 ? ease(t / 3.0) : 1.0;
+        vec2 uvz = (uvm - vec2(0.5, 0.48)) / (1.0 + 0.07 * push) + vec2(0.5, 0.48);
+        uvz += vec2(0.025, 0.010) * (1.0 - push) * u_motion;
+        vec2 puv = u_plateXf.zw + uvz * u_plateXf.xy;
+
+        vec2 rr = vec2(0.030, 0.053);
+        float c0 = texture2D(u_plate, puv).r;
+        float around = 0.25 * (texture2D(u_plate, puv + vec2(rr.x, 0.0)).r + texture2D(u_plate, puv - vec2(rr.x, 0.0)).r
+                             + texture2D(u_plate, puv + vec2(0.0, rr.y)).r + texture2D(u_plate, puv - vec2(0.0, rr.y)).r);
+        float leafy = smoothstep(0.02, 0.16, around - c0);
+
+        // Wiatr: wolne, nakładające się fale przesuwają cień liści (kilka pikseli), a samo zdjęcie poza liśćmi stoi w miejscu.
+        vec2 wind = vec2(sin(uvz.y * 7.0 + t * 1.1) + 0.6 * sin(uvz.x * 13.0 - t * 1.7 + 1.3),
+                         0.6 * cos(uvz.x * 6.0 + t * 0.9) + 0.4 * sin(uvz.y * 17.0 + t * 2.1));
+        float pl = texture2D(u_plate, puv + wind * leafy * 0.0045 * u_plateXf.xy * u_motion).r;
+        pl -= leafy * 0.025 * sin(t * 1.9 + uvz.x * 9.0 + uvz.y * 5.0) * u_motion;   // cień liści lekko migocze
+
+        vec3 base = mix(DARK, LIT, smoothstep(0.06, 0.94, pl));
+        col = mix(col, base, u_plateMix);
+        sh *= 1.0 - u_plateMix;                              // cień rośliny jest już na zdjęciu
+    }
+
     // 4. Letnia bryza (plan między ścianą a znakiem): szeroki, rozmyty półokrąg światła płynący od lewej do prawej przez środek
     //    znaku (ok. 0,25 do 2,9 s), lekko falujący w pionie jak podmuch wiatru, z własną paralaksą względem kamery (u_breeze).
     float p = ease((t - 0.25) / 2.65);
@@ -148,7 +186,7 @@ void main() {
     float d = length(qm - vec2(bx, by));
     float blob = pow(1.0 - smoothstep(0.0, R, d), 1.6);
     float tail = smoothstep(-0.55 * R, 0.12 * R, qm.x - bx);
-    float env = smoothstep(0.0, 0.14, p) * (1.0 - smoothstep(0.8, 1.0, p)) * u_motion;
+    float env = smoothstep(0.0, 0.14, p) * (1.0 - smoothstep(0.8, 1.0, p)) * u_motion * (1.0 - u_plateMix);
     col = mix(col, WARM, 0.32 * blob * tail * env * (1.0 - 0.3 * sh));
 
     // 5. Poświata za znakiem (rośnie z rysowaniem, potem lekko opada) i ziarno przeciw pasom w gradientach.
@@ -439,8 +477,21 @@ export function lightFromSeed(seed) {
             (rng() < 0.5 ? -1 : 1) * range(0.55, 0.8),
         ],
         plantFlip: rng() < 0.4 ? 1 : 0,
+        // Dalsze losowania są dopisywane na końcu, żeby nie zmieniać układu światła znanego ziarna.
+        plate: Math.floor(id / 2), // numer płyty tła (kto go używa, bierze modulo liczby płyt)
+        zoom: range(1, 1.16), // przybliżenie zdjęcia (różny kadr tej samej płyty)
+        pan: [range(-1, 1), range(-1, 1)], // przesunięcie kadru w granicach luzu
     };
 }
+
+// Płyty tła (public/intro/plate-N.webp, patrz scripts/intro-plates.mjs): focus to część zdjęcia (0 do 1, od lewej i od góry), którą kadr
+// zostawia na wąskim ekranie, bo tam są cienie liści i światło. Kolejność jak w skrypcie; liczba płyt jest też w config/clinic.php.
+const PLATES = [
+    { focus: [0.72, 0.62] }, // gałązki oliwki i ukośna tafla światła, prawy dolny róg
+    { focus: [0.55, 0.45] }, // okno ze szprosami, miękka tafla światła pośrodku
+    { focus: [0.78, 0.35] }, // duże liście monstery, prawy górny róg
+    { focus: [0.75, 0.55] }, // palma i paproć, po prawej
+];
 
 const FOV = (26 * Math.PI) / 180;
 const BREEZE_DEPTH = -34; // plan bryzy: między ścianą a znakiem
@@ -484,7 +535,7 @@ function createLeaf(canvas, plantCanvas, lines, look) {
     });
     if (!gl) return null;
 
-    const wall = program(gl, WALL_VERTEX, WALL_FRAGMENT, ['u_res', 'u_origin', 'u_scene', 'u_time', 'u_motion', 'u_breeze', 'u_plant', 'u_sun', 'u_shape', 'u_look']);
+    const wall = program(gl, WALL_VERTEX, WALL_FRAGMENT, ['u_res', 'u_origin', 'u_scene', 'u_time', 'u_motion', 'u_breeze', 'u_plant', 'u_plate', 'u_plateXf', 'u_plateMix', 'u_sun', 'u_shape', 'u_look']);
     const line = program(gl, LINE_VERTEX, LINE_FRAGMENT, [
         'u_mvp', 'u_dist', 'u_scene', 'u_remap', 'u_center', 'u_half', 'u_time', 'u_motion', 'u_core', 'u_fade', 'u_pxu', 'u_k',
         'u_sun', 'u_shape', 'u_look',
@@ -525,23 +576,40 @@ function createLeaf(canvas, plantCanvas, lines, look) {
         gl.uniform2f(uniforms.u_look, look.flip, look.plantFlip);
     }
 
+    // Płyta tła na jednostce 1; do czasu wczytania zdjęcia leży tam jeden szary piksel (kompletna tekstura, bez ostrzeżeń sterownika).
+    const plateTexture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, plateTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 128, 255]));
+    gl.activeTexture(gl.TEXTURE0);
+
     gl.useProgram(wall.program);
     gl.uniform1i(wall.uniforms.u_plant, 0);
+    gl.uniform1i(wall.uniforms.u_plate, 1);
+    gl.uniform1f(wall.uniforms.u_plateMix, 0);
+    gl.uniform4f(wall.uniforms.u_plateXf, 1, 1, 0, 0);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    return { gl, wall, line, quad, quadAttr, lineBuffer, lineIndex, lineAttrs, stride, texture, count: lines.count };
+    return { gl, wall, line, quad, quadAttr, lineBuffer, lineIndex, lineAttrs, stride, texture, plateTexture, count: lines.count };
 }
 
 /**
  * Uruchamia scenę na podanych płótnach (po jednym w każdym skrzydle). `root` to nakładka intro (scena), `signet` to element
  * znaku w układzie strony (jego położenie i szerokość wyznaczają kamerę), `strokes` to ścieżki znaku z czasami z Intro.vue,
- * a `seed` to ziarno układu światła (lightFromSeed).
+ * a `seed` to ziarno układu światła (lightFromSeed). `plate` to numer płyty tła (domyślnie z ziarna), a `plateBase` adres
+ * katalogu z plikami płyt (plate-N.webp).
  * Zwraca { finish, destroy } albo null, gdy WebGL jest niedostępny (wtedy zostaje wersja CSS).
  */
-export function createIntroLight({ root, canvases, signet, strokes, plant, motion = true, seed = 0 }) {
+export function createIntroLight({ root, canvases, signet, strokes, plant, motion = true, seed = 0, plate: plateOption, plateBase = '/intro' }) {
     if (typeof window === 'undefined' || !window.WebGLRenderingContext) return null;
 
     const look = lightFromSeed(seed);
+    const plateIndex = Number.isInteger(plateOption) && plateOption >= 0 ? plateOption % PLATES.length : look.plate % PLATES.length;
+    const plate = { image: null, aspect: 16 / 9, readyAt: 0 };
 
     const leaves = [];
     let frame = 0;
@@ -594,7 +662,55 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plantCanvas);
         }
+        placePlate();
         return true;
+    };
+
+    // Kadr płyty: zdjęcie okrywa scenę (cover) z zapasem na ruch kamery, przybliżone o zoom z ziarna, a okno kadru leży w okolicy
+    // punktu zainteresowania płyty (na wąskim ekranie widać więc cień liści, nie sam tynk), przesunięte o pan z ziarna.
+    const placePlate = () => {
+        if (!plate.image) return;
+        const zoom = look.zoom;
+        const fx = (Math.min(1, camera.aspect / plate.aspect) * 0.9) / zoom;
+        const fy = (Math.min(1, plate.aspect / camera.aspect) * 0.9) / zoom;
+        const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+        // Okno kadru nie dochodzi do brzegu zdjęcia (zapas 4 %), bo kamera się przesuwa, a wiatr przesuwa cień liści.
+        const place = (size, focus, pan) => {
+            const slack = 1 - size;
+            const pad = Math.min(0.04, slack / 2);
+            return pad + (slack - 2 * pad) * clamp01(focus + 0.3 * pan);
+        };
+        const [focusX, focusY] = PLATES[plateIndex].focus;
+        const ox = place(fx, focusX, look.pan[0]);
+        const oy = place(fy, focusY, look.pan[1]);
+        for (const leaf of leaves) {
+            leaf.gl.useProgram(leaf.wall.program);
+            leaf.gl.uniform4f(leaf.wall.uniforms.u_plateXf, fx, fy, ox, oy);
+        }
+    };
+
+    const uploadPlate = () => {
+        for (const leaf of leaves) {
+            const { gl } = leaf;
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, leaf.plateTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plate.image);
+            gl.activeTexture(gl.TEXTURE0);
+        }
+    };
+
+    const loadPlate = () => {
+        const image = new Image();
+        image.onload = () => {
+            if (!alive) return;
+            plate.image = image;
+            plate.aspect = image.naturalWidth / image.naturalHeight;
+            plate.readyAt = motion ? performance.now() : -1e9;
+            uploadPlate();
+            placePlate();
+            if (!motion) render();
+        };
+        image.src = `${plateBase}/plate-${plateIndex}.webp`;
     };
 
     const render = () => {
@@ -632,6 +748,7 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
             gl.uniform1f(wall.uniforms.u_time, time);
             gl.uniform1f(wall.uniforms.u_motion, motion ? 1 : 0);
             gl.uniform2f(wall.uniforms.u_breeze, breeze[0], breeze[1]);
+            gl.uniform1f(wall.uniforms.u_plateMix, plate.image ? ease((now - plate.readyAt) / 700) : 0);
             gl.drawArrays(gl.TRIANGLES, 0, 3);
             gl.disableVertexAttribArray(leaf.quadAttr);
 
@@ -687,6 +804,7 @@ export function createIntroLight({ root, canvases, signet, strokes, plant, motio
     }
 
     window.addEventListener('resize', onResize);
+    loadPlate();
     if (motion) {
         loop();
     } else {

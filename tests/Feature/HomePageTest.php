@@ -41,6 +41,31 @@ class HomePageTest extends TestCase
         $this->assertStringContainsString('intro=(\d+)', $html);
         $this->assertStringContainsString("d.setAttribute('data-intro-seed', seed)", $html);
         $this->assertStringContainsString("if (seed % 2) { d.setAttribute('data-intro-flip', ''); }", $html);
+
+        // Płyta tła (zdjęcie ściany): numer z ziarna i preload, a pliki wszystkich płyt muszą istnieć.
+        $this->assertStringContainsString("d.setAttribute('data-intro-plate', plate)", $html);
+        $this->assertStringContainsString('var plates = '.config('clinic.intro_plates').';', $html);
+        $this->assertStringContainsString("preload.href = base + '/plate-' + plate + '.webp'", $html);
+    }
+
+    public function test_every_intro_plate_exists_as_a_small_image(): void
+    {
+        $plates = (int) config('clinic.intro_plates');
+
+        $this->assertGreaterThan(0, $plates);
+
+        for ($i = 0; $i < $plates; $i++) {
+            $path = public_path("intro/plate-{$i}.webp");
+
+            $this->assertFileExists($path);
+            // Płyta jest wczytywana przy pierwszej wizycie, więc ma być lekka (tu z zapasem: do 400 KB).
+            $this->assertLessThan(400 * 1024, filesize($path));
+        }
+
+        // Tabela płyt w scenie WebGL (punkt zainteresowania dla wąskich ekranów) ma tyle wpisów, ile jest plików.
+        $js = file_get_contents(resource_path('js/intro-light.js'));
+        preg_match('/const PLATES = \[(.*?)\n\];/s', $js, $match);
+        $this->assertSame($plates, substr_count($match[1] ?? '', 'focus:'));
     }
 
     public function test_home_page_ships_seo_in_the_html(): void

@@ -49,6 +49,17 @@
                     d.setAttribute('data-intro', 'play');
                     d.setAttribute('data-intro-seed', seed);
                     if (seed % 2) { d.setAttribute('data-intro-flip', ''); }
+                    // Płyta tła sceny (zdjęcie ściany w public/intro): numer z ziarna, preload od razu, żeby była gotowa przed startem sceny.
+                    var plates = {{ (int) config('clinic.intro_plates', 1) }};
+                    var plate = Math.floor(seed / 2) % plates;
+                    var base = @json(asset('intro'));
+                    d.setAttribute('data-intro-plate', plate);
+                    d.setAttribute('data-intro-plates', base);
+                    var preload = document.createElement('link');
+                    preload.rel = 'preload';
+                    preload.as = 'image';
+                    preload.href = base + '/plate-' + plate + '.webp';
+                    document.head.appendChild(preload);
                 }
             } catch (e) {}
         })();
