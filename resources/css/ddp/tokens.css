@@ -28,6 +28,40 @@
   --shadow-bar: 0 -10px 28px -14px rgba(69, 21, 34, 0.28);
   --shadow-menu: 0 24px 48px -24px rgba(69, 21, 34, 0.35);
 }
+/* Wersja kontrastowa (WCAG 2.1, przełącznik „Dostępność” w nagłówku): żółty i biały na czarnym, ponad 14:1. */
+html[data-contrast] {
+  --hc-bg: #000;
+  --hc-ink: #fff;
+  --hc-accent: #ffe600;
+  --surface: var(--hc-bg);
+  --surface-alt: var(--hc-bg);
+  --surface-deep: var(--hc-bg);
+  --brand: var(--hc-accent);
+  --brand-deep: var(--hc-ink);
+  --ink: var(--hc-ink);
+  --heading: var(--hc-accent);
+  --ink-soft: var(--hc-ink);
+  --muted: #d9d9d9;
+  --taupe: var(--hc-ink);
+  --hairline: var(--hc-ink);
+  --field-border: var(--hc-ink);
+  --brand-tint: transparent;
+  --on-brand: var(--hc-bg);
+  --on-brand-soft: var(--hc-bg);
+  --on-brand-line: var(--hc-bg);
+  --focus: var(--hc-accent);
+  --focus-on-brand: var(--hc-bg);
+  --error: #ff8a80;
+  --success: #7ee2a8;
+  --scrim: var(--hc-bg);
+  --photo-light: #1a1a1a;
+  --photo-mid: #1a1a1a;
+  --photo-deep: #1a1a1a;
+  --photo-shadow: #1a1a1a;
+  --shadow-bar: none;
+  --shadow-menu: none;
+  color-scheme: dark;
+}
 :root {
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
   --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px; --space-10: 128px;

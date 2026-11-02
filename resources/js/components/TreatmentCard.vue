@@ -12,7 +12,8 @@ defineProps({
 <template>
     <component :is="href ? 'a' : 'div'" class="ddp-card" :href="href">
         <div class="ddp-card__media">
-            <Picture :name="image" sizes="(min-width: 1024px) 24vw, 50vw" />
+            <!-- Zdjęcie jest ozdobą odnośnika: jego nazwę czytnik bierze z tytułu, opis zdjęcia tylko by ją zagłuszał. -->
+            <Picture :name="image" sizes="(min-width: 1024px) 24vw, 50vw" alt="" />
         </div>
         <div class="ddp-card__scrim"></div>
         <div class="ddp-card__body">

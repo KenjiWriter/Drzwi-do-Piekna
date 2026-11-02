@@ -111,7 +111,9 @@ Pliki cookies to małe pliki zapisywane w Twojej przeglądarce. Nasza strona kor
 | `drzwi-do-piekna-session` | identyfikuje sesję w przeglądarce, dzięki czemu formularz kontaktowy działa bezpiecznie, a po wysłaniu możemy wyświetlić potwierdzenie | 2 godziny | własny, techniczny, niezbędny |
 | `XSRF-TOKEN` | zabezpiecza formularz przed podrobieniem żądania (atak CSRF) | 2 godziny | własny, techniczny, niezbędny |
 
-Strona zapisuje też w pamięci sesji przeglądarki (sessionStorage) wpis `ddp-intro`, który zapamiętuje, że animacja powitalna została już pokazana. Nie zawiera on danych osobowych i znika po zamknięciu karty. Pracownicy gabinetu, którzy logują się do panelu redakcyjnego, korzystają dodatkowo z plików sesji panelu. Dotyczy to wyłącznie zalogowanych pracowników.
+Strona zapisuje też w pamięci sesji przeglądarki (sessionStorage) wpis `ddp-intro`, który zapamiętuje, że animacja powitalna została już pokazana. Nie zawiera on danych osobowych i znika po zamknięciu karty.
+
+Jeśli skorzystasz z ustawień dostępności (większy tekst, wersja kontrastowa), strona zapamięta ten wybór w pamięci przeglądarki (localStorage) we wpisie `ddp-a11y`, żeby nie trzeba było ustawiać go na każdej podstronie i przy kolejnej wizycie. Wpis zawiera tylko wybrane ustawienia, nie jest wysyłany na nasz serwer i znika, gdy przywrócisz ustawienia domyślne albo usuniesz dane strony w przeglądarce. Pracownicy gabinetu, którzy logują się do panelu redakcyjnego, korzystają dodatkowo z plików sesji panelu. Dotyczy to wyłącznie zalogowanych pracowników.
 
 ### Jak zarządzać plikami cookies
 

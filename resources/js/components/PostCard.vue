@@ -15,7 +15,8 @@ defineProps({
 <template>
     <article class="ddp-postcard">
         <div v-if="post.photo" class="ddp-postcard__media">
-            <Picture :name="post.photo" sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw" />
+            <!-- Na liście zdjęcie jest ozdobą karty (to samo zdjęcie z opisem jest na stronie wpisu). -->
+            <Picture :name="post.photo" sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw" alt="" />
         </div>
         <div class="ddp-postcard__body">
             <p class="ddp-postcard__meta">

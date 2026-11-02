@@ -33,14 +33,31 @@
         <title inertia>{{ config('app.name') }}</title>
     @endif
 
-    {{-- Animacja powitalna: gra raz na sesję, nie gra przy ograniczonym ruchu ani w trybie automatyzacji. ?intro wymusza odtworzenie, ?intro=N także układ światła N. --}}
+    {{-- Ustawienia dostępności odwiedzającej (wielkość tekstu, wersja kontrastowa) z localStorage, przed pierwszym malowaniem. Zapis: resources/js/a11y.js. --}}
+    <script>
+        (function () {
+            var d = document.documentElement;
+            try {
+                var p = JSON.parse(localStorage.getItem('ddp-a11y') || 'null');
+                if (!p) { return; }
+                if (p.text === 'lg' || p.text === 'xl') { d.setAttribute('data-text-size', p.text); }
+                if (p.contrast === true) {
+                    d.setAttribute('data-contrast', '');
+                    var m = document.querySelector('meta[name="theme-color"]');
+                    if (m) { m.setAttribute('data-base', m.getAttribute('content')); m.setAttribute('content', '#000000'); }
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    {{-- Animacja powitalna: gra raz na sesję, nie gra przy ograniczonym ruchu, w wersji kontrastowej ani w trybie automatyzacji. ?intro wymusza odtworzenie, ?intro=N także układ światła N. --}}
     <script>
         (function () {
             var d = document.documentElement;
             try {
                 var forced = /[?&]intro(=|&|$)/.test(location.search);
                 var seen = sessionStorage.getItem('ddp-intro');
-                var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.webdriver;
+                var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.webdriver || d.hasAttribute('data-contrast');
                 if (forced || (!seen && !calm)) {
                     // Ziarno układu światła: losowe przy każdym odtworzeniu (nie jest nigdzie zapisywane), ?intro=N wymusza ziarno N.
                     // Nieparzyste ziarno odbija światło w poziomie (wpada z prawej): wersja CSS czyta to z data-intro-flip, scena WebGL z ziarna.

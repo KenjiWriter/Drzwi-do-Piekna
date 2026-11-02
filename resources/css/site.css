@@ -3,6 +3,17 @@ html { scroll-behavior: smooth; scroll-padding-top: var(--header-h); }
 @media (min-width: 1024px) { html { scroll-padding-top: var(--header-h-lg); } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; }
+
+/*
+ * Wielkość tekstu z ustawień dostępności (A+ i A++, html[data-text-size] ustawia skrypt w <head>). Wszystkie rozmiary
+ * pisma są w rem, więc wystarczy rozmiar bazowy; odstępy są w px i zostają. Logo w nagłówku nie rośnie: to znak marki,
+ * a na telefonie nagłówek nie ma zapasu miejsca. Gdy menu przestaje się mieścić, nagłówek sam zwija się do burgera.
+ */
+html[data-text-size="lg"] { --text-scale: 1.25; font-size: 125%; }
+html[data-text-size="xl"] { --text-scale: 1.5; font-size: 150%; }
+html[data-text-size] .ddp-header .ddp-logo { font-size: calc(1rem / var(--text-scale)); }
+/* Długie słowa w dużych nagłówkach („Doświadczenie”, „Radiofrekwencja”) przy A++ bywają szersze niż telefon 320 px: dzielimy je. */
+html[data-text-size] :where(h1, h2, h3, .ddp-h1, .ddp-h2, .ddp-h3, .ddp-h4, .ddp-quote) { overflow-wrap: anywhere; hyphens: auto; }
 figure { margin: 0; }
 picture { display: contents; }
 
@@ -23,7 +34,7 @@ picture { display: contents; }
 /* Pomocnicze układy */
 .stack { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); }
 .effects-note { margin-top: var(--space-5); }
-.contact-lines { margin: 0; font-style: normal; font-size: 1rem; line-height: 1.7; color: var(--ink); }
+.contact-lines { margin: 0; font-style: normal; font-size: 1rem; line-height: 1.7; color: var(--ink); overflow-wrap: anywhere; }
 .contact-lines a { display: inline-block; padding: 8px 0; color: var(--ink); }
 
 /* Zdjęcia w panelu: kadr zależy od zdjęcia (object-position ustawia komponent) */

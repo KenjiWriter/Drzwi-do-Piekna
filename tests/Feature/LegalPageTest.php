@@ -97,6 +97,11 @@ class LegalPageTest extends TestCase
         // Wpis w sessionStorage animacji powitalnej.
         $this->assertStringContainsString("'ddp-intro'", file_get_contents(resource_path('js/components/Intro.vue')));
         $this->assertStringContainsString('<code>ddp-intro</code>', $html);
+
+        // Wpis w localStorage z ustawieniami dostępności (zapis w a11y.js, odczyt w szablonie).
+        $this->assertStringContainsString("'ddp-a11y'", file_get_contents(resource_path('js/a11y.js')));
+        $this->assertStringContainsString("'ddp-a11y'", file_get_contents(resource_path('views/app.blade.php')));
+        $this->assertStringContainsString('<code>ddp-a11y</code>', $html);
     }
 
     public function test_the_policy_claims_about_data_handling_hold_for_the_code(): void
