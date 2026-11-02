@@ -12,6 +12,7 @@ use App\Exceptions\AltTextUnavailable;
 use App\Exceptions\InvalidPhoto;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Psr\Http\Client\ClientInterface;
 
 /**
  * Opis alternatywny zdjęcia (atrybut alt, WCAG 2.1, kryterium 1.1.1) proponowany przez Claude (Anthropic API).
@@ -37,7 +38,11 @@ class AltText
         - Jeśli na zdjęciu jest czytelny napis, który coś znaczy, przytocz go krótko.
         PROMPT;
 
-    public function __construct(private readonly PhotoStore $photos) {}
+    /** `$transporter` podstawiają tylko testy (klient HTTP zamiast prawdziwego połączenia z API). */
+    public function __construct(
+        private readonly PhotoStore $photos,
+        private readonly ?ClientInterface $transporter = null,
+    ) {}
 
     /** Czy w tym środowisku jest klucz do Anthropic API. */
     public static function enabled(): bool
@@ -132,6 +137,9 @@ class AltText
 
     private function client(): Client
     {
-        return new Client(apiKey: config('services.anthropic.key'));
+        return new Client(
+            apiKey: config('services.anthropic.key'),
+            requestOptions: $this->transporter ? ['transporter' => $this->transporter] : null,
+        );
     }
 }

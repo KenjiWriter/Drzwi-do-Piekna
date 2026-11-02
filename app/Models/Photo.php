@@ -92,6 +92,12 @@ class Photo extends Model
         return $this->variantPath($this->sortedWidths()[0]);
     }
 
+    /** Ścieżka pliku wariantu na dysku (najbliższego niemniejszego), np. do wysłania kopii zdjęcia usłudze AI. */
+    public function localPath(int $width = self::DEFAULT_WIDTH): string
+    {
+        return Storage::disk(self::DISK)->path($this->variantPath($this->closestWidth($width)));
+    }
+
     /** Adres wariantu o danej szerokości (najbliższego niemniejszego, a w razie braku największego). */
     public function url(?int $width = null): string
     {
