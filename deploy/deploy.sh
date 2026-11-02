@@ -36,7 +36,7 @@ say "Sprawdzanie środowiska"
 [ -f .env ] || fail "brak pliku .env (wzór: .env.production.example)"
 [ "$(env_value APP_ENV)" = "$EXPECT_ENV" ] || fail "APP_ENV w .env musi mieć wartość $EXPECT_ENV"
 [ "$(env_value APP_DEBUG)" = "false" ] || fail "APP_DEBUG w .env musi mieć wartość false"
-[ -n "$(env_value APP_KEY)" ] || fail "brak APP_KEY (php artisan key:generate --force)"
+[ -n "$(env_value APP_KEY)" ] || fail "brak APP_KEY (php8.4 artisan key:generate --force)"
 case "$(env_value APP_URL)" in https://*) ;; *) fail "APP_URL musi zaczynać się od https://";; esac
 [ "$(env_value DB_CONNECTION)" = "pgsql" ] || fail "w produkcji baza to PostgreSQL (DB_CONNECTION=pgsql)"
 [ -z "$(env_value ADMIN_PASSWORD)" ] || fail "ADMIN_PASSWORD nie może być ustawione w produkcji"

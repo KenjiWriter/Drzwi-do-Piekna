@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Image;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -48,7 +49,7 @@ class PhotoForm
     /**
      * Pola wgrywania nowego zdjęcia w oknie „Wgraj nowe” przy wyborze zdjęcia (obszar, zabieg, zespół).
      *
-     * @return array<int, \Filament\Schemas\Components\Component>
+     * @return array<int, Component>
      */
     public static function uploadFields(): array
     {

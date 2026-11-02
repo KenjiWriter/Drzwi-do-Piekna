@@ -142,7 +142,7 @@ show_changes() {
         echo "  UWAGA serwer: zmieniły się pliki konfiguracji nginx lub Supervisora. deploy.sh ich nie stosuje, skopiuj je ręcznie (docs/DEPLOY.md)"
     fi
     if [ "$direction" = "back" ] && [ "$migrations" -gt 0 ]; then
-        echo "  UWAGA: cofasz kod, ale migracje zostają w bazie (są dodające, zwykle nie przeszkadza; cofnięcie: php artisan migrate:rollback --step=N)"
+        echo "  UWAGA: cofasz kod, ale migracje zostają w bazie (są dodające, zwykle nie przeszkadza; cofnięcie: php8.4 artisan migrate:rollback --step=N)"
     fi
 
     return 0

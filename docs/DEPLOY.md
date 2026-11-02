@@ -13,7 +13,7 @@ Wdrożenie techniczne jest gotowe, ale **strony nie wolno jeszcze publikować ja
       (panel: Treści, Dokumenty; zgoda w formularzu linkuje do niej, stopka też), a fakty o działaniu strony (jakie dane zbiera
       formularz, jakie cookies ustawia, że nie ma analityki) są wypełnione z kodu. Zostają pola w nawiasach kwadratowych
       (administrator, NIP, podstawy prawne, odbiorcy, okresy przechowywania) i pole „[Treść zgody do zatwierdzenia…]” w
-      `lang/pl/pages.php`. Dopóki są niewypełnione, **`deploy.sh` blokuje wdrożenie produkcyjne** (`php artisan legal:check`;
+      `lang/pl/pages.php`. Dopóki są niewypełnione, **`deploy.sh` blokuje wdrożenie produkcyjne** (`php8.4 artisan legal:check`;
       świadome obejście: `ALLOW_DRAFT_LEGAL=1 bash deploy/deploy.sh`), strona ma dopisek „Wersja robocza” i `noindex`.
       Po zatwierdzeniu treści trzeba jeszcze wdrożyć okres przechowywania zgłoszeń (automatyczne usuwanie).
 - [ ] **Treści wymagają przeglądu prawnika klienta** (reklama działalności leczniczej): zabiegi, cennik, artykuły z bloga
@@ -38,8 +38,13 @@ dane startowe, SSR pod Supervisorem). Przed uruchomieniem rekord A `demo.cerasus
 sudo apt update && sudo apt install -y git
 sudo git clone https://github.com/KenjiWriter/Drzwi-do-Piekna.git /var/www/drzwidopiekna
 sudo LE_EMAIL=twoj@adres.pl bash /var/www/drzwidopiekna/deploy/provision-staging.sh
-cd /var/www/drzwidopiekna && sudo php artisan make:filament-user      # konto do /admin, hasło wpisujesz sam
+cd /var/www/drzwidopiekna && sudo php8.4 artisan make:filament-user      # konto do /admin, hasło wpisujesz sam
 ```
+
+Polecenia `artisan` wpisywane ręcznie na serwerze zawsze uruchamiaj przez `php8.4`, nie przez samo `php`. Na serwerze współdzielonym
+domyślne `php` bywa starsze (np. 8.3) i kończy się błędem „Composer detected issues in your platform… require a PHP version >= 8.4.1”.
+Skrypty `deploy/` robią to same. Domyślne `php` przestawiaj (`sudo update-alternatives --set php /usr/bin/php8.4`) tylko wtedy, gdy
+nie korzysta z niego inna aplikacja (jej cron, Supervisor, polecenia CLI); w przeciwnym razie wystarczy alias w `~/.bashrc` konta.
 
 Skrypt można uruchomić ponownie (nie nadpisuje `.env`, hasła bazy, konfiguracji nginx ani danych). Kolejne wdrożenia:
 
@@ -114,12 +119,12 @@ cd /var/www/drzwidopiekna
 git clone <adres-repozytorium> .          # albo: rsync -a --exclude node_modules --exclude vendor ./ serwer:/var/www/drzwidopiekna/
 cp .env.production.example .env && chmod 600 .env
 nano .env                                 # APP_URL, DB_PASSWORD, dane SMTP; reszta jest w komentarzach
-composer install --no-dev --optimize-autoloader
-php artisan key:generate --force
+php8.4 "$(command -v composer)" install --no-dev --optimize-autoloader
+php8.4 artisan key:generate --force
 
-php artisan migrate --force
-php artisan db:seed --force               # TYLKO RAZ, patrz uwaga poniżej
-php artisan make:filament-user            # konto redaktorki
+php8.4 artisan migrate --force
+php8.4 artisan db:seed --force               # TYLKO RAZ, patrz uwaga poniżej
+php8.4 artisan make:filament-user            # konto redaktorki
 ```
 
 > **Uwaga: `db:seed` uruchamiaj tylko przy pierwszym wdrożeniu.** Seedery zabiegów, cennika i zespołu używają
@@ -127,7 +132,7 @@ php artisan make:filament-user            # konto redaktorki
 > pozycje cennika i zakłada je od nowa. Seedery wpisów bloga i opinii (`firstOrCreate`) niczego nie nadpisują.
 > Na produkcji seeder nie zakłada konta deweloperskiego ani przykładowej opinii. Szkielet polityki prywatności
 > (`PageSeeder`) powstaje raz i niczego nie nadpisuje, więc w środowisku, które powstało wcześniej, wystarczy
-> `php artisan db:seed --class=PageSeeder --force`.
+> `php8.4 artisan db:seed --class=PageSeeder --force`.
 
 Katalogi `storage` i `bootstrap/cache` muszą być zapisywalne dla PHP-FPM:
 
@@ -270,14 +275,14 @@ niż po jednym skoku. Zestaw adresów jest w `tests/fixtures/old-site-paths.txt`
 ## 10. Wycofanie zmian
 
 - **Błąd po wdrożeniu kodu:** wróć do poprzedniej wersji (`git checkout <poprzedni-commit>`) i uruchom `bash deploy/deploy.sh`.
-  Migracje w tym projekcie są addytywne, więc zwykle nie trzeba ich cofać. Jeśli trzeba: `php artisan migrate:rollback --step=1`.
+  Migracje w tym projekcie są addytywne, więc zwykle nie trzeba ich cofać. Jeśli trzeba: `php8.4 artisan migrate:rollback --step=1`.
 - **Awaria bazy:** odtwarzanie z kopii (punkt 7).
 - **Problem po przełączeniu DNS:** stary serwer WordPress zostaje włączony do czasu, aż nowa strona zostanie sprawdzona;
   powrót to zmiana rekordów DNS (stąd niski TTL).
 
 ## 11. Bezpieczeństwo panelu `/admin`
 
-- Konta zakłada się ręcznie (`php artisan make:filament-user`). Nie ma publicznej rejestracji.
+- Konta zakłada się ręcznie (`php8.4 artisan make:filament-user`). Nie ma publicznej rejestracji.
 - Logowanie ma limit prób. W produkcji `robots.txt` ukrywa `/admin` przed wyszukiwarkami.
 - **Dwuskładnikowe logowanie (2FA) jest wymagane w produkcji.** Po `make:filament-user` konto loguje się hasłem i od razu trafia
   na ekran konfiguracji: skanuje kod QR aplikacją uwierzytelniającą (Google Authenticator, Microsoft Authenticator, Authy), wpisuje
@@ -291,7 +296,7 @@ niż po jednym skoku. Zestaw adresów jest w `tests/fixtures/old-site-paths.txt`
   (wyłączenie wymaga hasła): każde logowanie wymaga wtedy kodu z aplikacji i kodu z e-maila, który idzie od razu po hasle. Przy takim
   koncie awaria poczty oznacza brak dostępu do panelu, dopóki administrator serwera nie zresetuje 2FA (poniżej).
 - **Utrata telefonu i kodów odzyskiwania albo awaria poczty przy „wymagaj obu”:** nikt z panelu tego nie naprawi (bez drugiego składnika
-  nie da się zalogować), więc robi to administrator serwera: `php artisan admin:reset-2fa adres@konta.pl` (pyta o potwierdzenie, `--force`
+  nie da się zalogować), więc robi to administrator serwera: `php8.4 artisan admin:reset-2fa adres@konta.pl` (pyta o potwierdzenie, `--force`
   pomija pytanie; usuwa aplikację, kody awaryjne, kod z e-maila i „wymagaj obu”). Konto loguje się wtedy hasłem i konfiguruje 2FA od nowa.
   Przed resetem upewnij się, że o reset prosi właściwa osoba.
 - Sekret 2FA i kody odzyskiwania są szyfrowane kluczem aplikacji (`APP_KEY`), kody dodatkowo skrótowane. **Zmiana `APP_KEY` unieważnia
