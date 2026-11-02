@@ -283,6 +283,10 @@ niż po jednym skoku. Zestaw adresów jest w `tests/fixtures/old-site-paths.txt`
 ## 11. Bezpieczeństwo panelu `/admin`
 
 - Konta zakłada się ręcznie (`php8.4 artisan make:filament-user`). Nie ma publicznej rejestracji.
+- **Zapomniane hasło:** panel nie ma resetu przez e-mail, więc nowe hasło ustawia administrator serwera:
+  `sudo php8.4 artisan admin:reset-password adres@konta.pl` (bez adresu pokaże listę kont do wyboru). Hasło wpisuje się dwa razy
+  bez podglądu (min. 12 znaków), więc nie zostaje w historii powłoki. Zmiana wylogowuje inne sesje konta i unieważnia „zapamiętaj mnie”.
+  2FA zostaje bez zmian; jeśli nie ma też dostępu do kodów, dodatkowo `admin:reset-2fa` (poniżej).
 - Logowanie ma limit prób. W produkcji `robots.txt` ukrywa `/admin` przed wyszukiwarkami.
 - **Dwuskładnikowe logowanie (2FA) jest wymagane w produkcji.** Po `make:filament-user` konto loguje się hasłem i od razu trafia
   na ekran konfiguracji: skanuje kod QR aplikacją uwierzytelniającą (Google Authenticator, Microsoft Authenticator, Authy), wpisuje
