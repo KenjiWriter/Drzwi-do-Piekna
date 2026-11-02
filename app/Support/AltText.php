@@ -120,7 +120,7 @@ class AltText
     {
         $alt = Str::of($text)
             ->squish()
-            ->trim(" \"'„”«»“")
+            ->replaceMatches('/^["\'„”«»“\s]+|["\'„”«»“\s]+$/u', '')
             ->replaceMatches('/^(zdjęcie|fotografia|obraz)\s+(przedstawia|pokazuje)\s*:?\s*/iu', '')
             ->replaceMatches('/^na\s+(zdjęciu|fotografii)\s+(widać|widzimy)\s*:?\s*/iu', '')
             ->toString();

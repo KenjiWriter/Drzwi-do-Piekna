@@ -28,6 +28,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Opisy alternatywne zdjęć proponowane przez AI w panelu (App\Support\AltText). Bez klucza opis wpisuje się ręcznie.
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'alt_model' => env('ANTHROPIC_ALT_MODEL', 'claude-opus-5-5'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
