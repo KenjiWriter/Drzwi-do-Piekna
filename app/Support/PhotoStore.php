@@ -28,6 +28,20 @@ class PhotoStore
 
     private const TYPES = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP];
 
+    /**
+     * Pomniejszona kopia zdjęcia (WebP, najwyżej 1024 px szerokości, z wypalonym obrotem i bez metadanych)
+     * do wysłania usłudze AI, która proponuje opis alternatywny.
+     *
+     * @throws InvalidPhoto
+     */
+    public function preview(string $file, int $maxWidth = 1024): string
+    {
+        $image = $this->open($file);
+        $width = imagesx($image);
+
+        return $this->encode($image, $width, imagesy($image), min($width, $maxWidth));
+    }
+
     /** @throws InvalidPhoto */
     public function store(string $file, string $title, string $alt, ?string $originalName = null): Photo
     {
